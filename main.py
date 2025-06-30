@@ -74,15 +74,15 @@ class HelpDropdown(Select):
             discord.SelectOption(
                 label='Moderation',
                 description='Server management commands',
-                emoji='<:mod1:1389181036755161221>'
+                emoji='<:moderation:1345359844445524041>'
             ),
             discord.SelectOption(
                 label='Admin',
                 description='Administrative commands',
-                emoji='<:admin1:1389181036755161221>'
+                emoji='<:GoldModerator:1348939969456115764>'
             )
         ]
-        super().__init__(placeholder='✨ Select a category', options=options)
+        super().__init__(placeholder='<:help:1345381592335646750> Select a category', options=options)
 
     async def callback(self, interaction: discord.Interaction):
         category = self.values[0]
@@ -113,27 +113,27 @@ class HelpDropdown(Select):
         elif category == 'Moderation':
             embed.description = "Server moderation commands:"
             embed.add_field(
-                name='<:kick1:1389178762020520109> `kick <user> [reason]`',
+                name=<:kick:1345360371002900550> `kick <user> [reason]`',
                 value='Kick a member from the server',
                 inline=False
             )
             embed.add_field(
-                name='<:ban1:1389180694814654474> `ban <user> [reason]`',
+                name='<:ban:1345360761236488276> `ban <user> [reason]`',
                 value='Ban a member from the server',
                 inline=False
             )
             embed.add_field(
-                name='<:unban1:1389180853195771906> `unban <user_id>`',
+                name='<:unban:1345361440969724019> `unban <user_id>`',
                 value='Unban a user from the server',
                 inline=False
             )
             embed.add_field(
-                name='<:clear1:1389181036755161221> `clear <amount>`',
+                name='<a:purge:1345361946324631644> `clear <amount>`',
                 value='Delete a specified number of messages',
                 inline=False
             )
             embed.add_field(
-                name='<:warn1:1389181551358509077> `warn <user> [reason]`',
+                name='<:timeout:1345362419475546173> `warn <user> [reason]`',
                 value='Warn a member',
                 inline=False
             )
@@ -212,7 +212,7 @@ async def kick(ctx, member: discord.Member, *, reason=None):
     try:
         await member.kick(reason=reason)
         embed = discord.Embed(
-            title='<:kick1:1389178762020520109> Member Kicked',
+            title='<:kick:1345360371002900550> Member Kicked',
             description=f'**Member:** {member.mention}\n**Reason:** {reason or "No reason provided"}\n**Moderator:** {ctx.author.mention}',
             color=discord.Color.orange()
         )
@@ -237,7 +237,7 @@ async def unban(ctx, user_id: int):
             if ban_entry.user.id == user_id:
                 await ctx.guild.unban(user)
                 embed = discord.Embed(
-                    title='<:unban1:1389180853195771906> User Unbanned',
+                    title='<:unban:1345361440969724019> User Unbanned',
                     description=f'**User:** {user.mention}\n**Moderator:** {ctx.author.mention}',
                     color=discord.Color.green()
                 )
@@ -271,7 +271,7 @@ async def clear(ctx, amount: int):
     try:
         deleted = await ctx.channel.purge(limit=amount + 1)
         embed = discord.Embed(
-            title='<:clear1:1389181036755161221> Messages Cleared',
+            title='<a:purge:1345361946324631644> Messages Cleared',
             description=f'Successfully deleted {len(deleted)-1} messages.',
             color=discord.Color.green()
         )
