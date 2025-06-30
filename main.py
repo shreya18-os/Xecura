@@ -368,10 +368,10 @@ async def profile(ctx, member: Optional[discord.Member] = None):
 @bot.command(name='givebadge')
 async def give_badge(ctx, user: discord.Member, badge: str):
     if ctx.author.id != OWNER_ID:
-        return await ctx.send('<error:ID> Only the bot owner can use this command!')
+        return await ctx.send('<a:nope1:1389178762020520109> Only the bot owner can use this command!')
     
     if badge not in BADGES or badge == 'no_badge':
-        return await ctx.send('<error:ID> Invalid badge!')
+        return await ctx.send('<a:nope1:1389178762020520109> Invalid badge!')
     
     user_id = str(user.id)
     if user_id not in data_manager.badges:
@@ -382,12 +382,12 @@ async def give_badge(ctx, user: discord.Member, badge: str):
         data_manager.save_data()
         await ctx.send(f'<:tick1:1389181551358509077> Added {BADGES[badge]} to {user.mention}')
     else:
-        await ctx.send(f'<error:ID> {user.mention} already has this badge!')
+        await ctx.send(f'<a:nope1:1389178762020520109> {user.mention} already has this badge!')
 
 @bot.command(name='removebadge')
 async def remove_badge(ctx, user: discord.Member, badge: str):
     if ctx.author.id != OWNER_ID:
-        return await ctx.send('<error:ID> Only the bot owner can use this command!')
+        return await ctx.send('<a:nope1:1389178762020520109> Only the bot owner can use this command!')
     
     user_id = str(user.id)
     if user_id in data_manager.badges and badge in data_manager.badges[user_id]:
@@ -397,7 +397,7 @@ async def remove_badge(ctx, user: discord.Member, badge: str):
         data_manager.save_data()
         await ctx.send(f'<:tick1:1389181551358509077> Removed {BADGES[badge]} from {user.mention}')
     else:
-        await ctx.send(f'<error:ID> {user.mention} doesn\'t have this badge!')
+        await ctx.send(f'<a:nope1:1389178762020520109> {user.mention} doesn\'t have this badge!')
 
 @bot.command(name='togglenoprefix')
 async def toggle_no_prefix(ctx, user: discord.Member):
