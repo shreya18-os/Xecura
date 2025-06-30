@@ -447,32 +447,6 @@ async def ping(ctx):
     )
     await ctx.send(embed=embed)
 
-@bot.command(name='kick')
-@commands.has_permissions(kick_members=True)
-async def kick(ctx, member: discord.Member, *, reason=None):
-    if member.top_role >= ctx.author.top_role and ctx.author.id != OWNER_ID:
-        embed = discord.Embed(
-            title='<a:nope1:1389178762020520109> Error',
-            description='You cannot kick someone with a higher or equal role!',
-            color=discord.Color.red()
-        )
-        return await ctx.send(embed=embed)
-    
-    try:
-        await member.kick(reason=reason)
-        embed = discord.Embed(
-            title='<:tick1:1389181551358509077> Member Kicked',
-            description=f'{member.mention} has been kicked\nReason: {reason or "No reason provided"}',
-            color=discord.Color.orange()
-        )
-        await ctx.send(embed=embed)
-    except discord.Forbidden:
-        embed = discord.Embed(
-            title='<a:nope1:1389178762020520109> Error',
-            description='I do not have permission to kick this member!',
-            color=discord.Color.red()
-        )
-        await ctx.send(embed=embed)
 
 @bot.command(name='ban')
 @commands.has_permissions(ban_members=True)
