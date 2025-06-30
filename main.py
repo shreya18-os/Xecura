@@ -59,46 +59,48 @@ BADGES = {
 
 # Help command with dropdown
 class HelpDropdown(Select):
-    def __init__(self):
+    def __init__(self, ctx):
+        self.ctx = ctx
         options = [
-            discord.SelectOption(
-                label='General',
-                description='General commands',
-                emoji='⚙️'
-            ),
-            discord.SelectOption(
-                label='Profile',
-                description='Profile related commands',
-                emoji='👤'
-            ),
-            discord.SelectOption(
-                label='Admin',
-                description='Administrative commands',
-                emoji='🛠️'
-            )
+            discord.SelectOption(label='General', description='General commands', emoji='⚙️'),
+            discord.SelectOption(label='Profile', description='Profile-related commands', emoji='👤'),
+            discord.SelectOption(label='Admin', description='Administrative commands', emoji='🛠️')
         ]
         super().__init__(placeholder='Select a category', options=options)
 
     async def callback(self, interaction: discord.Interaction):
-        category = self.values[0]
-        if category == 'General':
-            commands_list = "```\nhelp - Show this help menu\nping - Check bot's latency\n```"
-        elif category == 'Profile':
-            commands_list = "```\nprofile - View your or someone else's profile\n```"
-        elif category == 'Admin':
-            commands_list = "```\ngivebadge - Give a badge to a user (Owner only)\nremovebadge - Remove a badge from a user (Owner only)\ntogglenoprefix - Toggle no-prefix mode for a user (Owner only)\n```"
+        if interaction.user != self.ctx.author:
+            return await interaction.response.send_message("❌ You can't use this menu.", ephemeral=True)
 
+        category = self.values[0]
         embed = discord.Embed(
             title=f'{category} Commands',
-            description=commands_list,
             color=discord.Color.blue()
         )
+
+        if category == 'General':
+            cmds = ['help', 'ping']
+        elif category == 'Profile':
+            cmds = ['profile']
+        elif category == 'Admin':
+            cmds = ['givebadge', 'removebadge', 'togglenoprefix']
+        else:
+            cmds = []
+
+        for command in bot.commands:
+            if command.name in cmds:
+                embed.add_field(
+                    name=f"`{command.name}`",
+                    value=command.help or "No description.",
+                    inline=False
+                )
+
         await interaction.response.edit_message(embed=embed)
 
 class HelpView(View):
-    def __init__(self):
-        super().__init__()
-        self.add_item(HelpDropdown())
+    def __init__(self, ctx):
+        super().__init__(timeout=60)
+        self.add_item(HelpDropdown(ctx))
 
 @bot.event
 async def on_ready():
@@ -118,15 +120,16 @@ async def on_command_error(ctx, error):
             )
             await ctx.send(embed=embed)
 
-@bot.command(name='help')
+@bot.command(name='help', help="Show the help menu with categorized commands.")
 async def custom_help(ctx):
     embed = discord.Embed(
         title='📖 Help Menu',
-        description='Select a category below to view commands',
+        description='Please select a category below to view commands.',
         color=discord.Color.blue()
     )
-    view = HelpView()
+    view = HelpView(ctx)
     await ctx.send(embed=embed, view=view)
+
 
 @bot.command(name='profile')
 async def profile(ctx, member: Optional[discord.Member] = None):
