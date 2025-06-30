@@ -59,48 +59,110 @@ BADGES = {
 
 # Help command with dropdown
 class HelpDropdown(Select):
-    def __init__(self, ctx):
-        self.ctx = ctx
+    def __init__(self):
         options = [
-            discord.SelectOption(label='General', description='General commands', emoji='⚙️'),
-            discord.SelectOption(label='Profile', description='Profile-related commands', emoji='👤'),
-            discord.SelectOption(label='Admin', description='Administrative commands', emoji='🛠️')
+            discord.SelectOption(
+                label='General',
+                description='Basic utility commands',
+                emoji='<:general1:1389183049916481646>'
+            ),
+            discord.SelectOption(
+                label='Profile',
+                description='User profile and badge management',
+                emoji='<:profile1:1389182687947919370>'
+            ),
+            discord.SelectOption(
+                label='Moderation',
+                description='Server management commands',
+                emoji='<:mod1:1389181036755161221>'
+            ),
+            discord.SelectOption(
+                label='Admin',
+                description='Administrative commands',
+                emoji='<:admin1:1389181036755161221>'
+            )
         ]
-        super().__init__(placeholder='Select a category', options=options)
+        super().__init__(placeholder='✨ Select a category', options=options)
 
     async def callback(self, interaction: discord.Interaction):
-        if interaction.user != self.ctx.author:
-            return await interaction.response.send_message("❌ You can't use this menu.", ephemeral=True)
-
         category = self.values[0]
-        embed = discord.Embed(
-            title=f'{category} Commands',
-            color=discord.Color.blue()
-        )
-
+        embed = discord.Embed(color=discord.Color.blue())
+        embed.set_author(name=f'{category} Commands', icon_url=interaction.guild.icon.url if interaction.guild.icon else None)
+        
         if category == 'General':
-            cmds = ['help', 'ping']
+            embed.description = "Here are the general utility commands:"
+            embed.add_field(
+                name='<:help1:1389181551358509077> `help`',
+                value='Show this help menu',
+                inline=False
+            )
+            embed.add_field(
+                name='<:ping1:1389181942553116695> `ping`',
+                value='Check bot\'s latency',
+                inline=False
+            )
+        
         elif category == 'Profile':
-            cmds = ['profile']
+            embed.description = "Manage your profile and badges:"
+            embed.add_field(
+                name='<:profile1:1389182687947919370> `profile [user]`',
+                value='View your or someone else\'s profile',
+                inline=False
+            )
+        
+        elif category == 'Moderation':
+            embed.description = "Server moderation commands:"
+            embed.add_field(
+                name='<:kick1:1389178762020520109> `kick <user> [reason]`',
+                value='Kick a member from the server',
+                inline=False
+            )
+            embed.add_field(
+                name='<:ban1:1389180694814654474> `ban <user> [reason]`',
+                value='Ban a member from the server',
+                inline=False
+            )
+            embed.add_field(
+                name='<:unban1:1389180853195771906> `unban <user_id>`',
+                value='Unban a user from the server',
+                inline=False
+            )
+            embed.add_field(
+                name='<:clear1:1389181036755161221> `clear <amount>`',
+                value='Delete a specified number of messages',
+                inline=False
+            )
+            embed.add_field(
+                name='<:warn1:1389181551358509077> `warn <user> [reason]`',
+                value='Warn a member',
+                inline=False
+            )
+        
         elif category == 'Admin':
-            cmds = ['givebadge', 'removebadge', 'togglenoprefix']
-        else:
-            cmds = []
-
-        for command in bot.commands:
-            if command.name in cmds:
-                embed.add_field(
-                    name=f"`{command.name}`",
-                    value=command.help or "No description.",
-                    inline=False
-                )
-
+            embed.description = "Owner-only administrative commands:"
+            embed.add_field(
+                name='<:badge1:1389182687947919370> `givebadge <user> <badge>`',
+                value='Give a badge to a user',
+                inline=False
+            )
+            embed.add_field(
+                name='<:nobadge1:1389178762020520109> `removebadge <user> <badge>`',
+                value='Remove a badge from a user',
+                inline=False
+            )
+            embed.add_field(
+                name='<:prefix1:1389181942553116695> `togglenoprefix <user>`',
+                value='Toggle no-prefix mode for a user',
+                inline=False
+            )
+        
+        embed.set_footer(text=f'Prefix: {DEFAULT_PREFIX} | Total Commands: {len(bot.commands)}')
         await interaction.response.edit_message(embed=embed)
 
 class HelpView(View):
-    def __init__(self, ctx):
-        super().__init__(timeout=60)
-        self.add_item(HelpDropdown(ctx))
+    def __init__(self):
+        super().__init__()
+        self.add_item(HelpDropdown())
 
 @bot.event
 async def on_ready():
@@ -110,26 +172,190 @@ async def on_ready():
 import traceback
 @bot.event
 async def on_command_error(ctx, error):
-    traceback.print_exception(type(error), error, error.__traceback__)
-    if isinstance(error, commands.CommandNotFound):
+    if isinstance(error, commands.MissingPermissions):
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='You do not have permission to use this command!',
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+    elif isinstance(error, commands.MissingRequiredArgument):
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description=f'Missing required argument: {error.param.name}',
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+    elif isinstance(error, commands.CommandNotFound):
         if str(ctx.author.id) not in data_manager.no_prefix_users:
             embed = discord.Embed(
-                title='❌ Error',
+                title='<a:nope1:1389178762020520109> Error',
                 description='Command not found!',
                 color=discord.Color.red()
             )
             await ctx.send(embed=embed)
+    else:
+        traceback.print_exception(type(error), error, error.__traceback__)
 
-@bot.command(name='help', help="Show the help menu with categorized commands.")
+# Moderation Commands
+@bot.command(name='kick')
+@commands.has_permissions(kick_members=True)
+async def kick(ctx, member: discord.Member, *, reason=None):
+    if member.top_role >= ctx.author.top_role and ctx.author.id != ctx.guild.owner_id:
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='You cannot kick someone with a higher or equal role!',
+            color=discord.Color.red()
+        )
+        return await ctx.send(embed=embed)
+
+    try:
+        await member.kick(reason=reason)
+        embed = discord.Embed(
+            title='<:kick1:1389178762020520109> Member Kicked',
+            description=f'**Member:** {member.mention}\n**Reason:** {reason or "No reason provided"}\n**Moderator:** {ctx.author.mention}',
+            color=discord.Color.orange()
+        )
+        await ctx.send(embed=embed)
+    except discord.Forbidden:
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='I do not have permission to kick this member!',
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+
+@bot.command(name='ban')
+@commands.has_permissions(ban_members=True)
+async def ban(ctx, member: discord.Member, *, reason=None):
+    if member.top_role >= ctx.author.top_role and ctx.author.id != ctx.guild.owner_id:
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='You cannot ban someone with a higher or equal role!',
+            color=discord.Color.red()
+        )
+        return await ctx.send(embed=embed)
+
+    try:
+        await member.ban(reason=reason)
+        embed = discord.Embed(
+            title='<:ban1:1389180694814654474> Member Banned',
+            description=f'**Member:** {member.mention}\n**Reason:** {reason or "No reason provided"}\n**Moderator:** {ctx.author.mention}',
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+    except discord.Forbidden:
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='I do not have permission to ban this member!',
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+
+@bot.command(name='unban')
+@commands.has_permissions(ban_members=True)
+async def unban(ctx, user_id: int):
+    try:
+        user = await bot.fetch_user(user_id)
+        bans = [ban_entry async for ban_entry in ctx.guild.bans()]
+        for ban_entry in bans:
+            if ban_entry.user.id == user_id:
+                await ctx.guild.unban(user)
+                embed = discord.Embed(
+                    title='<:unban1:1389180853195771906> User Unbanned',
+                    description=f'**User:** {user.mention}\n**Moderator:** {ctx.author.mention}',
+                    color=discord.Color.green()
+                )
+                return await ctx.send(embed=embed)
+        
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='This user is not banned!',
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+    except discord.NotFound:
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='User not found!',
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+
+@bot.command(name='clear')
+@commands.has_permissions(manage_messages=True)
+async def clear(ctx, amount: int):
+    if amount <= 0:
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='Please specify a positive number!',
+            color=discord.Color.red()
+        )
+        return await ctx.send(embed=embed)
+
+    try:
+        deleted = await ctx.channel.purge(limit=amount + 1)
+        embed = discord.Embed(
+            title='<:clear1:1389181036755161221> Messages Cleared',
+            description=f'Successfully deleted {len(deleted)-1} messages.',
+            color=discord.Color.green()
+        )
+        msg = await ctx.send(embed=embed)
+        await asyncio.sleep(3)
+        await msg.delete()
+    except discord.Forbidden:
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='I do not have permission to delete messages!',
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+
+@bot.command(name='warn')
+@commands.has_permissions(kick_members=True)
+async def warn(ctx, member: discord.Member, *, reason=None):
+    if member.top_role >= ctx.author.top_role and ctx.author.id != ctx.guild.owner_id:
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='You cannot warn someone with a higher or equal role!',
+            color=discord.Color.red()
+        )
+        return await ctx.send(embed=embed)
+
+    embed = discord.Embed(
+        title='<:warn1:1389181551358509077> Member Warned',
+        description=f'**Member:** {member.mention}\n**Reason:** {reason or "No reason provided"}\n**Moderator:** {ctx.author.mention}',
+        color=discord.Color.yellow()
+    )
+    await ctx.send(embed=embed)
+
+    try:
+        warn_dm = discord.Embed(
+            title='⚠️ Warning Received',
+            description=f'You have been warned in {ctx.guild.name}\n**Reason:** {reason or "No reason provided"}\n**Moderator:** {ctx.author}',
+            color=discord.Color.yellow()
+        )
+        await member.send(embed=warn_dm)
+    except discord.Forbidden:
+        pass
+
+@bot.command(name='help')
 async def custom_help(ctx):
     embed = discord.Embed(
-        title='📖 Help Menu',
-        description='Please select a category below to view commands.',
+        title='<:help1:1389181551358509077> Xecura Help Menu',
+        description='Welcome to Xecura Bot! Choose a category below to view commands.',
         color=discord.Color.blue()
     )
-    view = HelpView(ctx)
+    embed.add_field(
+        name='Quick Tips',
+        value='• Use the dropdown menu below to navigate\n• All commands start with the prefix `x!`\n• Some users may have no-prefix privileges',
+        inline=False
+    )
+    embed.set_footer(text=f'Prefix: {DEFAULT_PREFIX} | Total Commands: {len(bot.commands)}')
+    if ctx.guild.icon:
+        embed.set_thumbnail(url=ctx.guild.icon.url)
+    view = HelpView()
     await ctx.send(embed=embed, view=view)
-
 
 @bot.command(name='profile')
 async def profile(ctx, member: Optional[discord.Member] = None):
@@ -220,6 +446,135 @@ async def ping(ctx):
         color=discord.Color.green()
     )
     await ctx.send(embed=embed)
+
+@bot.command(name='kick')
+@commands.has_permissions(kick_members=True)
+async def kick(ctx, member: discord.Member, *, reason=None):
+    if member.top_role >= ctx.author.top_role and ctx.author.id != OWNER_ID:
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='You cannot kick someone with a higher or equal role!',
+            color=discord.Color.red()
+        )
+        return await ctx.send(embed=embed)
+    
+    try:
+        await member.kick(reason=reason)
+        embed = discord.Embed(
+            title='<:tick1:1389181551358509077> Member Kicked',
+            description=f'{member.mention} has been kicked\nReason: {reason or "No reason provided"}',
+            color=discord.Color.orange()
+        )
+        await ctx.send(embed=embed)
+    except discord.Forbidden:
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='I do not have permission to kick this member!',
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+
+@bot.command(name='ban')
+@commands.has_permissions(ban_members=True)
+async def ban(ctx, member: discord.Member, *, reason=None):
+    if member.top_role >= ctx.author.top_role and ctx.author.id != OWNER_ID:
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='You cannot ban someone with a higher or equal role!',
+            color=discord.Color.red()
+        )
+        return await ctx.send(embed=embed)
+    
+    try:
+        await member.ban(reason=reason)
+        embed = discord.Embed(
+            title='<:tick1:1389181551358509077> Member Banned',
+            description=f'{member.mention} has been banned\nReason: {reason or "No reason provided"}',
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+    except discord.Forbidden:
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='I do not have permission to ban this member!',
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+
+@bot.command(name='unban')
+@commands.has_permissions(ban_members=True)
+async def unban(ctx, user_id: int):
+    try:
+        user = await bot.fetch_user(user_id)
+        try:
+            await ctx.guild.unban(user)
+            embed = discord.Embed(
+                title='<:tick1:1389181551358509077> User Unbanned',
+                description=f'{user.mention} has been unbanned',
+                color=discord.Color.green()
+            )
+            await ctx.send(embed=embed)
+        except discord.NotFound:
+            embed = discord.Embed(
+                title='<a:nope1:1389178762020520109> Error',
+                description='This user is not banned!',
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+    except discord.NotFound:
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='User not found!',
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+
+@bot.command(name='clear')
+@commands.has_permissions(manage_messages=True)
+async def clear(ctx, amount: int):
+    if amount <= 0:
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='Please specify a positive number!',
+            color=discord.Color.red()
+        )
+        return await ctx.send(embed=embed)
+    
+    deleted = await ctx.channel.purge(limit=amount + 1)
+    embed = discord.Embed(
+        title='<:tick1:1389181551358509077> Messages Cleared',
+        description=f'Deleted {len(deleted)-1} messages',
+        color=discord.Color.green()
+    )
+    await ctx.send(embed=embed, delete_after=5)
+
+@bot.command(name='warn')
+@commands.has_permissions(kick_members=True)
+async def warn(ctx, member: discord.Member, *, reason=None):
+    if member.top_role >= ctx.author.top_role and ctx.author.id != OWNER_ID:
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='You cannot warn someone with a higher or equal role!',
+            color=discord.Color.red()
+        )
+        return await ctx.send(embed=embed)
+    
+    embed = discord.Embed(
+        title='<:tick1:1389181551358509077> Member Warned',
+        description=f'{member.mention} has been warned\nReason: {reason or "No reason provided"}',
+        color=discord.Color.yellow()
+    )
+    await ctx.send(embed=embed)
+    
+    try:
+        warn_dm = discord.Embed(
+            title='⚠️ Warning Received',
+            description=f'You were warned in {ctx.guild.name}\nReason: {reason or "No reason provided"}',
+            color=discord.Color.yellow()
+        )
+        await member.send(embed=warn_dm)
+    except discord.Forbidden:
+        pass
 
 # Run the bot
 bot.run(TOKEN)
