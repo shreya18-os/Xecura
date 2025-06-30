@@ -64,26 +64,36 @@ class HelpDropdown(Select):
             discord.SelectOption(
                 label='General',
                 description='Basic utility commands',
-                emoji=discord.PartialEmoji(name='general1', id=1389183049916481646)
+                emoji='<:general1:1389183049916481646>'
             ),
             discord.SelectOption(
                 label='Profile',
                 description='User profile and badge management',
-                emoji=discord.PartialEmoji(name='profile1', id=1389182687947919370)
+                emoji='<:profile1:1389182687947919370>'
             ),
             discord.SelectOption(
                 label='Moderation',
                 description='Server management commands',
-                emoji=discord.PartialEmoji(name='moderation', id=1345359844445524041)
+                emoji='<:moderation:1345359844445524041>'
             ),
             discord.SelectOption(
                 label='Admin',
                 description='Administrative commands',
-                emoji=discord.PartialEmoji(name='GoldModerator', id=1348939969456115764)
+                emoji='<:GoldModerator:1348939969456115764>'
+            ),
+            discord.SelectOption(
+                label='Antinuke',
+                description='Server protection commands',
+                emoji='<:antinuke1:1389284381247410287>'
+            ),
+            discord.SelectOption(
+                label='Tickets',
+                description='Ticket system commands',
+                emoji='<:ticket1:1389284016099950693>'
             )
         ]
-
         super().__init__(placeholder='✨ Select a category', options=options)
+
 
     async def callback(self, interaction: discord.Interaction):
         category = self.values[0]
@@ -576,41 +586,6 @@ async def setup_tickets(ctx):
     await ctx.send(embed=embed, view=TicketView())
 
 # Update help menu with new categories
-class HelpDropdown(Select):
-    def __init__(self):
-        options = [
-            discord.SelectOption(
-                label='General',
-                description='Basic utility commands',
-                emoji='<:general1:1389183049916481646>'
-            ),
-            discord.SelectOption(
-                label='Profile',
-                description='User profile and badge management',
-                emoji='<:profile1:1389182687947919370>'
-            ),
-            discord.SelectOption(
-                label='Moderation',
-                description='Server management commands',
-                emoji='<:moderation:1345359844445524041>'
-            ),
-            discord.SelectOption(
-                label='Admin',
-                description='Administrative commands',
-                emoji='<:GoldModerator:1348939969456115764>'
-            ),
-            discord.SelectOption(
-                label='Antinuke',
-                description='Server protection commands',
-                emoji='<:antinuke1:1389284381247410287>'
-            ),
-            discord.SelectOption(
-                label='Tickets',
-                description='Ticket system commands',
-                emoji='<:ticket1:1389284016099950693>'
-            )
-        ]
-        super().__init__(placeholder='✨ Select a category', options=options)
 
 @bot.command(name='togglenoprefix')
 async def toggle_no_prefix(ctx, user: discord.Member):
