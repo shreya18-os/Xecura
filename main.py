@@ -167,7 +167,7 @@ class HelpView(View):
 @bot.event
 async def on_ready():
     print(f'{bot.user} is ready!')
-    await bot.change_presence(activity=discord.Game(name=f"{DEFAULT_PREFIX}help"))
+    await bot.change_presence(activity=discord.Game(name=f"Xecura | x!help"))
 
 import traceback
 @bot.event
