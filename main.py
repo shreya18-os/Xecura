@@ -82,7 +82,7 @@ class HelpDropdown(Select):
                 emoji='<:GoldModerator:1348939969456115764>'
             )
         ]
-        super().__init__(placeholder='<:help:1345381592335646750> Select a category', options=options)
+        super().__init__(placeholder='✨ Select a category', options=options)
 
     async def callback(self, interaction: discord.Interaction):
         category = self.values[0]
