@@ -399,6 +399,218 @@ async def remove_badge(ctx, user: discord.Member, badge: str):
     else:
         await ctx.send(f'<a:nope1:1389178762020520109> {user.mention} doesn\'t have this badge!')
 
+# Antinuke System
+class AntinukeManager:
+    def __init__(self):
+        self.enabled_guilds = set()
+        self.whitelisted_users = {}
+        self.load_data()
+    
+    def load_data(self):
+        try:
+            with open('antinuke.json', 'r') as f:
+                data = json.load(f)
+                self.enabled_guilds = set(data.get('enabled_guilds', []))
+                self.whitelisted_users = {guild_id: set(users) for guild_id, users in data.get('whitelisted_users', {}).items()}
+        except FileNotFoundError:
+            self.save_data()
+    
+    def save_data(self):
+        with open('antinuke.json', 'w') as f:
+            json_data = {
+                'enabled_guilds': list(self.enabled_guilds),
+                'whitelisted_users': {guild_id: list(users) for guild_id, users in self.whitelisted_users.items()}
+            }
+            json.dump(json_data, f, indent=4)
+
+antinuke_manager = AntinukeManager()
+
+@bot.command(name='antinuke')
+@commands.has_permissions(administrator=True)
+async def antinuke(ctx, action: str = None):
+    if action is None:
+        status = 'enabled' if str(ctx.guild.id) in antinuke_manager.enabled_guilds else 'disabled'
+        embed = discord.Embed(
+            title='<:shield:1345382219774087168> Antinuke Status',
+            description=f'Antinuke is currently **{status}** for this server.',
+            color=discord.Color.blue()
+        )
+        return await ctx.send(embed=embed)
+    
+    if action.lower() not in ['enable', 'disable']:
+        return await ctx.send('<a:nope1:1389178762020520109> Invalid action! Use `enable` or `disable`.')
+    
+    guild_id = str(ctx.guild.id)
+    if action.lower() == 'enable':
+        antinuke_manager.enabled_guilds.add(guild_id)
+        msg = 'enabled'
+    else:
+        antinuke_manager.enabled_guilds.discard(guild_id)
+        msg = 'disabled'
+    
+    antinuke_manager.save_data()
+    embed = discord.Embed(
+        title='<:shield:1345382219774087168> Antinuke Updated',
+        description=f'Antinuke has been {msg} for this server.',
+        color=discord.Color.green()
+    )
+    await ctx.send(embed=embed)
+
+@bot.command(name='whitelist')
+@commands.has_permissions(administrator=True)
+async def whitelist(ctx, action: str, user: discord.Member = None):
+    if action.lower() not in ['add', 'remove', 'list']:
+        return await ctx.send('<a:nope1:1389178762020520109> Invalid action! Use `add`, `remove`, or `list`.')
+    
+    guild_id = str(ctx.guild.id)
+    if guild_id not in antinuke_manager.whitelisted_users:
+        antinuke_manager.whitelisted_users[guild_id] = set()
+    
+    if action.lower() == 'list':
+        users = antinuke_manager.whitelisted_users[guild_id]
+        if not users:
+            return await ctx.send('<a:nope1:1389178762020520109> No whitelisted users in this server.')
+        
+        whitelisted = '\n'.join([f'<@{user_id}>' for user_id in users])
+        embed = discord.Embed(
+            title='<:shield:1345382219774087168> Whitelisted Users',
+            description=whitelisted,
+            color=discord.Color.blue()
+        )
+        return await ctx.send(embed=embed)
+    
+    if not user:
+        return await ctx.send('<a:nope1:1389178762020520109> Please specify a user!')
+    
+    if action.lower() == 'add':
+        antinuke_manager.whitelisted_users[guild_id].add(str(user.id))
+        msg = f'{user.mention} has been whitelisted.'
+    else:
+        antinuke_manager.whitelisted_users[guild_id].discard(str(user.id))
+        msg = f'{user.mention} has been removed from the whitelist.'
+    
+    antinuke_manager.save_data()
+    await ctx.send(f'<:tick1:1389181551358509077> {msg}')
+
+# Ticket System
+class TicketManager:
+    def __init__(self):
+        self.tickets = {}
+        self.load_data()
+    
+    def load_data(self):
+        try:
+            with open('tickets.json', 'r') as f:
+                self.tickets = json.load(f)
+        except FileNotFoundError:
+            self.save_data()
+    
+    def save_data(self):
+        with open('tickets.json', 'w') as f:
+            json.dump(self.tickets, f, indent=4)
+
+ticket_manager = TicketManager()
+
+class TicketView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+    
+    @discord.ui.button(label='Create Ticket', style=discord.ButtonStyle.green, emoji='🎫')
+    async def create_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
+        guild_id = str(interaction.guild.id)
+        if guild_id not in ticket_manager.tickets:
+            ticket_manager.tickets[guild_id] = {'count': 0, 'active': {}}
+        
+        ticket_data = ticket_manager.tickets[guild_id]
+        ticket_data['count'] += 1
+        ticket_number = ticket_data['count']
+        
+        # Create ticket channel
+        overwrites = {
+            interaction.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            interaction.user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            interaction.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True, manage_channels=True)
+        }
+        
+        channel = await interaction.guild.create_text_channel(
+            f'ticket-{ticket_number}',
+            overwrites=overwrites,
+            reason=f'Ticket created by {interaction.user}'
+        )
+        
+        ticket_data['active'][str(channel.id)] = {
+            'user_id': str(interaction.user.id),
+            'number': ticket_number,
+            'created_at': discord.utils.utcnow().isoformat()
+        }
+        ticket_manager.save_data()
+        
+        embed = discord.Embed(
+            title='🎫 Ticket Created',
+            description=f'Welcome {interaction.user.mention}!\nSupport will be with you shortly.\n\nTicket: #{ticket_number}',
+            color=discord.Color.green()
+        )
+        
+        class CloseButton(View):
+            def __init__(self):
+                super().__init__(timeout=None)
+            
+            @discord.ui.button(label='Close Ticket', style=discord.ButtonStyle.red, emoji='🔒')
+            async def close_ticket(self, button_interaction: discord.Interaction, button: discord.ui.Button):
+                await channel.delete()
+                del ticket_data['active'][str(channel.id)]
+                ticket_manager.save_data()
+        
+        await channel.send(embed=embed, view=CloseButton())
+        await interaction.response.send_message(f'Your ticket has been created: {channel.mention}', ephemeral=True)
+
+@bot.command(name='setup-tickets')
+@commands.has_permissions(administrator=True)
+async def setup_tickets(ctx):
+    embed = discord.Embed(
+        title='🎫 Create a Ticket',
+        description='Click the button below to create a support ticket.',
+        color=discord.Color.blue()
+    )
+    await ctx.send(embed=embed, view=TicketView())
+
+# Update help menu with new categories
+class HelpDropdown(Select):
+    def __init__(self):
+        options = [
+            discord.SelectOption(
+                label='General',
+                description='Basic utility commands',
+                emoji='<:general1:1389183049916481646>'
+            ),
+            discord.SelectOption(
+                label='Profile',
+                description='User profile and badge management',
+                emoji='<:profile1:1389182687947919370>'
+            ),
+            discord.SelectOption(
+                label='Moderation',
+                description='Server management commands',
+                emoji='<:moderation:1345359844445524041>'
+            ),
+            discord.SelectOption(
+                label='Admin',
+                description='Administrative commands',
+                emoji='<:GoldModerator:1348939969456115764>'
+            ),
+            discord.SelectOption(
+                label='Antinuke',
+                description='Server protection commands',
+                emoji='<:shield:1345382219774087168>'
+            ),
+            discord.SelectOption(
+                label='Tickets',
+                description='Ticket system commands',
+                emoji='🎫'
+            )
+        ]
+        super().__init__(placeholder='✨ Select a category', options=options)
+
 @bot.command(name='togglenoprefix')
 async def toggle_no_prefix(ctx, user: discord.Member):
     if ctx.author.id != OWNER_ID:
