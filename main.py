@@ -225,32 +225,7 @@ async def kick(ctx, member: discord.Member, *, reason=None):
         )
         await ctx.send(embed=embed)
 
-@bot.command(name='ban')
-@commands.has_permissions(ban_members=True)
-async def ban(ctx, member: discord.Member, *, reason=None):
-    if member.top_role >= ctx.author.top_role and ctx.author.id != ctx.guild.owner_id:
-        embed = discord.Embed(
-            title='<a:nope1:1389178762020520109> Error',
-            description='You cannot ban someone with a higher or equal role!',
-            color=discord.Color.red()
-        )
-        return await ctx.send(embed=embed)
 
-    try:
-        await member.ban(reason=reason)
-        embed = discord.Embed(
-            title='<:ban1:1389180694814654474> Member Banned',
-            description=f'**Member:** {member.mention}\n**Reason:** {reason or "No reason provided"}\n**Moderator:** {ctx.author.mention}',
-            color=discord.Color.red()
-        )
-        await ctx.send(embed=embed)
-    except discord.Forbidden:
-        embed = discord.Embed(
-            title='<a:nope1:1389178762020520109> Error',
-            description='I do not have permission to ban this member!',
-            color=discord.Color.red()
-        )
-        await ctx.send(embed=embed)
 
 @bot.command(name='unban')
 @commands.has_permissions(ban_members=True)
@@ -475,80 +450,7 @@ async def ban(ctx, member: discord.Member, *, reason=None):
         )
         await ctx.send(embed=embed)
 
-@bot.command(name='unban')
-@commands.has_permissions(ban_members=True)
-async def unban(ctx, user_id: int):
-    try:
-        user = await bot.fetch_user(user_id)
-        try:
-            await ctx.guild.unban(user)
-            embed = discord.Embed(
-                title='<:tick1:1389181551358509077> User Unbanned',
-                description=f'{user.mention} has been unbanned',
-                color=discord.Color.green()
-            )
-            await ctx.send(embed=embed)
-        except discord.NotFound:
-            embed = discord.Embed(
-                title='<a:nope1:1389178762020520109> Error',
-                description='This user is not banned!',
-                color=discord.Color.red()
-            )
-            await ctx.send(embed=embed)
-    except discord.NotFound:
-        embed = discord.Embed(
-            title='<a:nope1:1389178762020520109> Error',
-            description='User not found!',
-            color=discord.Color.red()
-        )
-        await ctx.send(embed=embed)
 
-@bot.command(name='clear')
-@commands.has_permissions(manage_messages=True)
-async def clear(ctx, amount: int):
-    if amount <= 0:
-        embed = discord.Embed(
-            title='<a:nope1:1389178762020520109> Error',
-            description='Please specify a positive number!',
-            color=discord.Color.red()
-        )
-        return await ctx.send(embed=embed)
-    
-    deleted = await ctx.channel.purge(limit=amount + 1)
-    embed = discord.Embed(
-        title='<:tick1:1389181551358509077> Messages Cleared',
-        description=f'Deleted {len(deleted)-1} messages',
-        color=discord.Color.green()
-    )
-    await ctx.send(embed=embed, delete_after=5)
-
-@bot.command(name='warn')
-@commands.has_permissions(kick_members=True)
-async def warn(ctx, member: discord.Member, *, reason=None):
-    if member.top_role >= ctx.author.top_role and ctx.author.id != OWNER_ID:
-        embed = discord.Embed(
-            title='<a:nope1:1389178762020520109> Error',
-            description='You cannot warn someone with a higher or equal role!',
-            color=discord.Color.red()
-        )
-        return await ctx.send(embed=embed)
-    
-    embed = discord.Embed(
-        title='<:tick1:1389181551358509077> Member Warned',
-        description=f'{member.mention} has been warned\nReason: {reason or "No reason provided"}',
-        color=discord.Color.yellow()
-    )
-    await ctx.send(embed=embed)
-    
-    try:
-        warn_dm = discord.Embed(
-            title='⚠️ Warning Received',
-            description=f'You were warned in {ctx.guild.name}\nReason: {reason or "No reason provided"}',
-            color=discord.Color.yellow()
-        )
-        await member.send(embed=warn_dm)
-    except discord.Forbidden:
-        pass
 
 # Run the bot
 bot.run(TOKEN)
