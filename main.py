@@ -157,7 +157,7 @@ class HelpDropdown(Select):
                 inline=False
             )
             embed.add_field(
-                name='<:nobadge1:1389178762020520109> `removebadge <user> <badge>`',
+                name='<:no_badge1:784477926065831946> `removebadge <user> <badge>`',
                 value='Remove a badge from a user',
                 inline=False
             )
