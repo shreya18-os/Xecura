@@ -737,42 +737,6 @@ async def antinuke(ctx, action: str = None):
     )
     await ctx.send(embed=embed)
 
-@bot.command(name='whitelist')
-@commands.has_permissions(administrator=True)
-async def whitelist(ctx, action: str, user: discord.Member = None):
-    if action.lower() not in ['add', 'remove', 'list']:
-        return await ctx.send('<a:nope1:1389178762020520109> Invalid action! Use `add`, `remove`, or `list`.')
-    
-    guild_id = str(ctx.guild.id)
-    if guild_id not in antinuke_manager.whitelisted_users:
-        antinuke_manager.whitelisted_users[guild_id] = set()
-    
-    if action.lower() == 'list':
-        users = antinuke_manager.whitelisted_users[guild_id]
-        if not users:
-            return await ctx.send('<a:nope1:1389178762020520109> No whitelisted users in this server.')
-        
-        whitelisted = '\n'.join([f'<@{user_id}>' for user_id in users])
-        embed = discord.Embed(
-            title='<:shield:1345382219774087168> Whitelisted Users',
-            description=whitelisted,
-            color=discord.Color.blue()
-        )
-        return await ctx.send(embed=embed)
-    
-    if not user:
-        return await ctx.send('<a:nope1:1389178762020520109> Please specify a user!')
-    
-    if action.lower() == 'add':
-        antinuke_manager.whitelisted_users[guild_id].add(str(user.id))
-        msg = f'{user.mention} has been whitelisted.'
-    else:
-        antinuke_manager.whitelisted_users[guild_id].discard(str(user.id))
-        msg = f'{user.mention} has been removed from the whitelist.'
-    
-    antinuke_manager.save_data()
-    await ctx.send(f'<:tick1:1389181551358509077> {msg}')
-
 # Ticket System
 class TicketManager:
     def __init__(self):
