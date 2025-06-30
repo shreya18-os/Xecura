@@ -23,17 +23,20 @@ class DataManager:
         try:
             with open('data.json', 'r') as f:
                 data = json.load(f)
-                self.badges = data.get('badges', {})
+                # Convert lists to sets for badges
+                self.badges = {user_id: set(badges) for user_id, badges in data.get('badges', {}).items()}
                 self.no_prefix_users = set(data.get('no_prefix_users', []))
         except FileNotFoundError:
             self.save_data()
     
     def save_data(self):
         with open('data.json', 'w') as f:
-            json.dump({
-                'badges': self.badges,
+            # Convert sets back to lists for JSON serialization
+            json_data = {
+                'badges': {user_id: list(badges) for user_id, badges in self.badges.items()},
                 'no_prefix_users': list(self.no_prefix_users)
-            }, f, indent=4)
+            }
+            json.dump(json_data, f, indent=4)
 
 data_manager = DataManager()
 
@@ -126,52 +129,71 @@ async def custom_help(ctx):
     await ctx.send(embed=embed, view=view)
 
 @bot.command(name='profile')
-async def profile(ctx, user: Optional[discord.Member] = None):
-    user = user or ctx.author
-    user_badges = data_manager.badges.get(str(user.id), [])
-    badge_display = ' '.join(BADGES[badge] for badge in user_badges) or BADGES['no_badge']
+async def profile(ctx, member: Optional[discord.Member] = None):
+    member = member or ctx.author
     
     embed = discord.Embed(
-        title=f'👤 {user.name}\'s Profile',
-        color=discord.Color.blue()
+        title=f'Profile - {member}',
+        color=member.color
     )
-    embed.add_field(name='User ID', value=user.id)
-    embed.add_field(name='Badges', value=badge_display)
-    embed.set_thumbnail(url=user.avatar.url if user.avatar else user.default_avatar.url)
+    
+    # Add user info
+    embed.set_thumbnail(url=member.avatar.url if member.avatar else None)
+    embed.add_field(name='<:idi1:1389183049916481646> User ID', value=member.id, inline=True)
+    embed.add_field(name='📅 Joined', value=member.joined_at.strftime('%Y-%m-%d'), inline=True)
+    
+    # Add badges
+    badges = data_manager.badges.get(str(member.id), set())
+    badge_display = '\n'.join([BADGES[badge] for badge in badges]) if badges else BADGES['no_badge']
+    badge_display = badge_display.replace('👑', '<:owner1:1389180694814654474>')\
+                               .replace('🛡️', '<a:staff112:1389180853195771906>')\
+                               .replace('⚡', '<:admin1:1389181036755161221>')\
+                               .replace('❌', '<a:nope1:1389178762020520109>')
+    embed.add_field(
+        name='<a:badge1:1389182687947919370> Badges',
+        value=badge_display,
+        inline=False
+    )
+    
+    # Add no-prefix status
+    no_prefix_status = '<:tick1:1389181551358509077> Enabled' if str(member.id) in data_manager.no_prefix_users else '<a:nope1:1389178762020520109> Disabled'
+    embed.add_field(name='<:prefix1:1389181942553116695> No-Prefix Status', value=no_prefix_status, inline=False)
     
     await ctx.send(embed=embed)
 
 @bot.command(name='givebadge')
 async def give_badge(ctx, user: discord.Member, badge: str):
     if ctx.author.id != OWNER_ID:
-        return await ctx.send('❌ Only the bot owner can use this command!')
+        return await ctx.send('<error:ID> Only the bot owner can use this command!')
     
     if badge not in BADGES or badge == 'no_badge':
-        return await ctx.send('❌ Invalid badge!')
+        return await ctx.send('<error:ID> Invalid badge!')
     
     user_id = str(user.id)
     if user_id not in data_manager.badges:
-        data_manager.badges[user_id] = []
+        data_manager.badges[user_id] = set()
     
     if badge not in data_manager.badges[user_id]:
-        data_manager.badges[user_id].append(badge)
+        data_manager.badges[user_id].add(badge)
         data_manager.save_data()
-        await ctx.send(f'✅ Added {BADGES[badge]} to {user.mention}')
+        await ctx.send(f'<success:ID> Added {BADGES[badge]} to {user.mention}')
     else:
-        await ctx.send(f'❌ {user.mention} already has this badge!')
+        await ctx.send(f'<error:ID> {user.mention} already has this badge!')
 
 @bot.command(name='removebadge')
 async def remove_badge(ctx, user: discord.Member, badge: str):
     if ctx.author.id != OWNER_ID:
-        return await ctx.send('❌ Only the bot owner can use this command!')
+        return await ctx.send('<error:ID> Only the bot owner can use this command!')
     
     user_id = str(user.id)
     if user_id in data_manager.badges and badge in data_manager.badges[user_id]:
         data_manager.badges[user_id].remove(badge)
+        if not data_manager.badges[user_id]:  # Remove empty set
+            del data_manager.badges[user_id]
         data_manager.save_data()
-        await ctx.send(f'✅ Removed {BADGES[badge]} from {user.mention}')
+        await ctx.send(f'<success:ID> Removed {BADGES[badge]} from {user.mention}')
     else:
-        await ctx.send(f'❌ {user.mention} doesn\'t have this badge!')
+        await ctx.send(f'<error:ID> {user.mention} doesn\'t have this badge!')
 
 @bot.command(name='togglenoprefix')
 async def toggle_no_prefix(ctx, user: discord.Member):
