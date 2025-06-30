@@ -92,12 +92,12 @@ class HelpDropdown(Select):
         if category == 'General':
             embed.description = "Here are the general utility commands:"
             embed.add_field(
-                name='<:help1:1389181551358509077> `help`',
+                name='<:help:1345381592335646750> `help`',
                 value='Show this help menu',
                 inline=False
             )
             embed.add_field(
-                name='<:ping1:1389181942553116695> `ping`',
+                name='<a:ping:1345381376433717269> `ping`',
                 value='Check bot\'s latency',
                 inline=False
             )
@@ -317,7 +317,7 @@ async def warn(ctx, member: discord.Member, *, reason=None):
 @bot.command(name='help')
 async def custom_help(ctx):
     embed = discord.Embed(
-        title='<:help1:1389181551358509077> Xecura Help Menu',
+        title='<:help:1345381592335646750> Xecura Help Menu',
         description='Welcome to Xecura Bot! Choose a category below to view commands.',
         color=discord.Color.blue()
     )
@@ -416,7 +416,7 @@ async def toggle_no_prefix(ctx, user: discord.Member):
 @bot.command(name='ping')
 async def ping(ctx):
     embed = discord.Embed(
-        title='🏓 Pong!',
+        title='<a:ping:1345381376433717269> Pong!',
         description=f'Latency: {round(bot.latency * 1000)}ms',
         color=discord.Color.green()
     )
