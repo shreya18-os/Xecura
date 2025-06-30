@@ -71,7 +71,7 @@ class HelpDropdown(Select):
                 description='User profile and badge management',
                 emoji='<:profile1:1389182687947919370>'
             ),
-            discord.SelectOption(
+            
                 label='Moderation',
                 description='Server management commands',
                 emoji='<:moderation:1345359844445524041>'
@@ -601,12 +601,12 @@ class HelpDropdown(Select):
             discord.SelectOption(
                 label='Antinuke',
                 description='Server protection commands',
-                emoji='<:shield:1345382219774087168>'
+                emoji='<:antinuke1:1389284381247410287>'
             ),
             discord.SelectOption(
                 label='Tickets',
                 description='Ticket system commands',
-                emoji='🎫'
+                emoji='<:ticket1:1389284016099950693>'
             )
         ]
         super().__init__(placeholder='✨ Select a category', options=options)
