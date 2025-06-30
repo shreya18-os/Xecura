@@ -113,7 +113,7 @@ class HelpDropdown(Select):
         elif category == 'Moderation':
             embed.description = "Server moderation commands:"
             embed.add_field(
-                name=<:kick:1345360371002900550> `kick <user> [reason]`',
+                name='<:kick:1345360371002900550> `kick <user> [reason]`',
                 value='Kick a member from the server',
                 inline=False
             )
