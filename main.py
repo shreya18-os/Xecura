@@ -69,7 +69,7 @@ class HelpDropdown(Select):
             discord.SelectOption(
                 label='Profile',
                 description='User profile and badge management',
-                emoji='<:profile1:1389182687947919370>'
+                emoji='<:profile1:1389287397761745039>'
             ),
             discord.SelectOption(
                 label='Moderation',
@@ -116,7 +116,7 @@ class HelpDropdown(Select):
         elif category == 'Profile':
             embed.description = "Manage your profile and badges:"
             embed.add_field(
-                name='<:profile1:1389182687947919370> `profile [user]`',
+                name='<:profile1:1389287397761745039> `profile [user]`',
                 value='View your or someone else\'s profile',
                 inline=False
             )
@@ -152,7 +152,7 @@ class HelpDropdown(Select):
         elif category == 'Admin':
             embed.description = "Owner-only administrative commands:"
             embed.add_field(
-                name='<:badge1:1389182687947919370> `givebadge <user> <badge>`',
+                name='<a:badge1:1389182687947919370> `givebadge <user> <badge>`',
                 value='Give a badge to a user',
                 inline=False
             )
