@@ -43,8 +43,8 @@ def get_prefix(bot, message):
         return commands.when_mentioned_or('*')(bot, message)
     return commands.when_mentioned_or(DEFAULT_PREFIX)(bot, message)
 
-# Initialize bot
-bot = commands.Bot(command_prefix=get_prefix, intents=discord.Intents.all())
+bot = commands.Bot(command_prefix=get_prefix, intents=discord.Intents.all(), help_command=None)
+
 
 # Badge definitions
 BADGES = {
