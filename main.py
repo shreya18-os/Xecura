@@ -380,7 +380,7 @@ async def give_badge(ctx, user: discord.Member, badge: str):
     if badge not in data_manager.badges[user_id]:
         data_manager.badges[user_id].add(badge)
         data_manager.save_data()
-        await ctx.send(f'<success:ID> Added {BADGES[badge]} to {user.mention}')
+        await ctx.send(f'<:tick1:1389181551358509077> Added {BADGES[badge]} to {user.mention}')
     else:
         await ctx.send(f'<error:ID> {user.mention} already has this badge!')
 
@@ -395,7 +395,7 @@ async def remove_badge(ctx, user: discord.Member, badge: str):
         if not data_manager.badges[user_id]:  # Remove empty set
             del data_manager.badges[user_id]
         data_manager.save_data()
-        await ctx.send(f'<success:ID> Removed {BADGES[badge]} from {user.mention}')
+        await ctx.send(f'<:tick1:1389181551358509077> Removed {BADGES[badge]} from {user.mention}')
     else:
         await ctx.send(f'<error:ID> {user.mention} doesn\'t have this badge!')
 
