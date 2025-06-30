@@ -462,33 +462,6 @@ class AntinukeManager:
 
 antinuke_manager = AntinukeManager()
 
-@bot.command(name='antinuke')
-@commands.has_permissions(administrator=True)
-async def antinuke(ctx, action: str):
-    if action.lower() not in ['enable', 'disable']:
-        embed = discord.Embed(
-            title='<a:nope1:1389178762020520109> Error',
-            description='Invalid action! Use `enable` or `disable`.',
-            color=discord.Color.red()
-        )
-        return await ctx.send(embed=embed)
-    
-    guild_id = str(ctx.guild.id)
-    if action.lower() == 'enable':
-        antinuke_manager.enabled_guilds.add(guild_id)
-        status = 'enabled'
-    else:
-        antinuke_manager.enabled_guilds.discard(guild_id)
-        status = 'disabled'
-    
-    antinuke_manager.save_data()
-    embed = discord.Embed(
-        title='🛡️ Antinuke System',
-        description=f'Antinuke protection has been {status} for this server.',
-        color=discord.Color.green() if status == 'enabled' else discord.Color.red()
-    )
-    await ctx.send(embed=embed)
-
 @bot.command(name='whitelist')
 @commands.has_permissions(administrator=True)
 async def whitelist(ctx, action: str, member: Optional[discord.Member] = None):
