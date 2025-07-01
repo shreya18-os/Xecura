@@ -602,16 +602,6 @@ class TicketView(discord.ui.View):
         
         await interaction.response.send_message(f'Your ticket has been created: {channel.mention}', ephemeral=True)
 
-@bot.command(name='setup-tickets')
-@commands.has_permissions(administrator=True)
-async def setup_tickets(ctx):
-    embed = discord.Embed(
-        title='🎫 Support Tickets',
-        description='Click the button below to create a support ticket.',
-        color=discord.Color.blue()
-    )
-    view = TicketView()
-    await ctx.send(embed=embed, view=view)
 
 @bot.command(name='ticket-settings')
 @commands.has_permissions(administrator=True)
