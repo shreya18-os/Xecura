@@ -729,60 +729,6 @@ class AntinukeManager:
 
 antinuke_manager = AntinukeManager()
 
-@bot.command(name='whitelist')
-@commands.has_permissions(administrator=True)
-async def whitelist(ctx, action: str, member: Optional[discord.Member] = None):
-    guild_id = str(ctx.guild.id)
-    
-    if action.lower() not in ['add', 'remove', 'list']:
-        embed = discord.Embed(
-            title='<a:nope1:1389178762020520109> Error',
-            description='Invalid action! Use `add`, `remove`, or `list`.',
-            color=discord.Color.red()
-        )
-        return await ctx.send(embed=embed)
-    
-    if action.lower() != 'list' and not member:
-        embed = discord.Embed(
-            title='<a:nope1:1389178762020520109> Error',
-            description='Please specify a member to add/remove from whitelist!',
-            color=discord.Color.red()
-        )
-        return await ctx.send(embed=embed)
-    
-    if guild_id not in antinuke_manager.whitelisted_users:
-        antinuke_manager.whitelisted_users[guild_id] = set()
-    
-    if action.lower() == 'list':
-        whitelisted = antinuke_manager.whitelisted_users[guild_id]
-        if not whitelisted:
-            description = 'No users are whitelisted in this server.'
-        else:
-            users = ['<@' + user_id + '>' for user_id in whitelisted]
-            description = '**Whitelisted Users:**\n' + '\n'.join(users)
-        
-        embed = discord.Embed(
-            title='✅ Whitelist',
-            description=description,
-            color=discord.Color.blue()
-        )
-        return await ctx.send(embed=embed)
-    
-    member_id = str(member.id)
-    if action.lower() == 'add':
-        antinuke_manager.whitelisted_users[guild_id].add(member_id)
-        status = 'added to'
-    else:
-        antinuke_manager.whitelisted_users[guild_id].discard(member_id)
-        status = 'removed from'
-    
-    antinuke_manager.save_data()
-    embed = discord.Embed(
-        title='✅ Whitelist Updated',
-        description=f'{member.mention} has been {status} the whitelist.',
-        color=discord.Color.green()
-    )
-    await ctx.send(embed=embed)
 
 # Ticket System
 class TicketManager:
