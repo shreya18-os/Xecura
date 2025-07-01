@@ -627,7 +627,7 @@ class TicketView(discord.ui.View):
         )
         
         embed = discord.Embed(
-            title='🎫 Ticket Created',
+            title='<:ticket1:1389284016099950693> Ticket Created',
             description=f'Welcome {interaction.user.mention}!\nSupport will be with you shortly.\n\nClick the button below to close this ticket when resolved.',
             color=discord.Color.blue()
         )
@@ -824,7 +824,7 @@ class TicketView(View):
         ticket_manager.save_data()
         
         embed = discord.Embed(
-            title='🎫 Ticket Created',
+            title='<:ticket1:1389284016099950693> Ticket Created',
             description=f'Welcome {interaction.user.mention}!\nSupport will be with you shortly.\n\nTicket: #{ticket_number}',
             color=discord.Color.green()
         )
@@ -846,7 +846,7 @@ class TicketView(View):
 @commands.has_permissions(administrator=True)
 async def setup_tickets(ctx):
     embed = discord.Embed(
-        title='🎫 Create a Ticket',
+        title='<:ticket1:1389284016099950693> Create a Ticket',
         description='Click the button below to create a support ticket.',
         color=discord.Color.blue()
     )
