@@ -94,6 +94,44 @@ class HelpDropdown(Select):
             ),
             SelectOption(
                 label='Tickets',
+                description='Ticket system management',
+                emoji=PartialEmoji(name='ticket1', id=1389284016099950693)
+            )
+        ]
+        super().__init__(
+            placeholder="Select a category",
+            min_values=1,
+            max_values=1,
+            custom_id="help_dropdown",
+            options=options
+        )
+            SelectOption(
+                label='General',
+                description='Basic utility commands',
+                emoji=PartialEmoji(name='general1', id=1389183049916481646)
+            ),
+            SelectOption(
+                label='Profile',
+                description='User profile and badge management',
+                emoji=PartialEmoji(name='profile1', id=1389182687947919370)
+            ),
+            SelectOption(
+                label='Moderation',
+                description='Server management commands',
+                emoji=PartialEmoji(name='moderation', id=1345359844445524041)
+            ),
+            SelectOption(
+                label='Admin',
+                description='Administrative commands',
+                emoji=PartialEmoji(name='GoldModerator', id=1348939969456115764)
+            ),
+            SelectOption(
+                label='Antinuke',
+                description='Server protection features',
+                emoji=PartialEmoji(name='antinuke1', id=1389284381247410287)
+            ),
+            SelectOption(
+                label='Tickets',
                 description='Support ticket system',
                 emoji=PartialEmoji(name='ticket1', id=1389284016099950693)
             )
@@ -149,22 +187,31 @@ class HelpDropdown(Select):
                 embed.add_field(name='<:settings1:1389284016099950694> `ticket-settings`', value='Configure ticket system settings', inline=False)
 
             embed.set_footer(text=f'Prefix: {DEFAULT_PREFIX} | Total Commands: {len(bot.commands)}')
-            await interaction.response.edit_message(embed=embed)
+            
+            try:
+                await interaction.response.edit_message(embed=embed)
+            except discord.InteractionResponded:
+                await interaction.message.edit(embed=embed)
 
         except Exception as e:
+            error_msg = f'An error occurred while updating the help menu: {str(e)}'
             try:
-                await interaction.response.send_message(f'An error occurred: {str(e)}', ephemeral=True)
+                await interaction.response.send_message(error_msg, ephemeral=True)
             except discord.InteractionResponded:
-                await interaction.followup.send(f'An error occurred: {str(e)}', ephemeral=True)
+                await interaction.followup.send(error_msg, ephemeral=True)
 
 class HelpView(View):
     def __init__(self):
-        super().__init__(timeout=None)
+        super().__init__(timeout=300)  # 5 minutes timeout
         self.add_item(HelpDropdown())
+        self.message = None
 
     async def on_timeout(self):
+        for child in self.children:
+            child.disabled = True
         try:
-            await self.message.edit(view=None)
+            if self.message:
+                await self.message.edit(view=self)
         except:
             pass
 
@@ -374,7 +421,7 @@ async def warn(ctx, member: discord.Member, *, reason=None):
     except discord.Forbidden:
         pass
 
-@bot.command(name='help')
+@bot.command(name='help', aliases=['h'])
 async def custom_help(ctx):
     embed = discord.Embed(
         title='<:help:1345381592335646750> Xecura Help Menu',
@@ -383,7 +430,8 @@ async def custom_help(ctx):
     )
     if ctx.guild.icon:
         embed.set_thumbnail(url=ctx.guild.icon.url)
-    await ctx.send(embed=embed, view=HelpView())
+    view = HelpView()
+    view.message = await ctx.send(embed=embed, view=view)
 
 @bot.command(name='profile')
 async def profile(ctx, member: Optional[discord.Member] = None):
