@@ -490,7 +490,7 @@ async def give_badge(ctx, user: discord.Member, badge: str):
         data_manager.badges[user_id] = []
     
     if badge not in data_manager.badges[user_id]:
-    data_manager.badges[user_id].append(badge)
+        data_manager.badges[user_id].append(badge)
         data_manager.save_data()
         await ctx.send(f'<:tick1:1389181551358509077> Added {BADGES[badge]} to {user.mention}')
     else:
