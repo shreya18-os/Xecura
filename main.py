@@ -87,14 +87,6 @@ class HelpDropdown(Select):
                 description='Administrative commands',
                 emoji=PartialEmoji(name='GoldModerator', id=1348939969456115764)
             ),
-        ]
-        super().__init__(
-            placeholder="Select a category",
-            min_values=1,
-            max_values=1,
-            options=options,
-            custom_id="help_dropdown"
-        )
             SelectOption(
                 label='Antinuke',
                 description='Server protection features',
@@ -106,7 +98,14 @@ class HelpDropdown(Select):
                 emoji=PartialEmoji(name='ticket1', id=1389284016099950693)
             )
         ]
-        super().__init__(placeholder='✨ Select a category', options=options)
+
+        super().__init__(
+            placeholder='✨ Select a category',
+            min_values=1,
+            max_values=1,
+            options=options,
+            custom_id='help_dropdown'
+        )
 
     async def callback(self, interaction: Interaction):
         try:
