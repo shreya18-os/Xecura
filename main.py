@@ -23,11 +23,12 @@ class DataManager:
     def __init__(self):
         self.badges = {}
         self.no_prefix_users = set()
+        self.data_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.json')
         self.load_data()
     
     def load_data(self):
         try:
-            with open('data.json', 'r') as f:
+            with open(self.data_file, 'r') as f:
                 data = json.load(f)
                 # Convert lists to sets for badges
                 self.badges = {user_id: set(badges) for user_id, badges in data.get('badges', {}).items()}
@@ -36,7 +37,7 @@ class DataManager:
             self.save_data()
     
     def save_data(self):
-        with open('data.json', 'w') as f:
+        with open(self.data_file, 'w') as f:
             # Convert sets back to lists for JSON serialization
             json_data = {
                 'badges': {user_id: list(badges) for user_id, badges in self.badges.items()},
@@ -498,13 +499,8 @@ async def toggle_no_prefix(ctx, user: discord.Member):
         data_manager.no_prefix_users.add(user_id)
         status = 'enabled'
     
-    data_manager.save_data()
-    embed = discord.Embed(
-        title='<:prefix1:1389181942553116695> No-Prefix Status Updated',
-        description=f'No-prefix mode has been {status} for {user.mention}',
-        color=discord.Color.green()
-    )
-    await ctx.send(embed=embed)
+    data_manager.save_data()  # Save changes to file
+    await ctx.send(f'<:tick1:1389181551358509077> No-prefix mode {status} for {user.mention}')
 
 # Antinuke System
 class AntinukeManager:
