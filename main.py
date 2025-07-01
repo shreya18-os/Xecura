@@ -102,6 +102,8 @@ class HelpDropdown(Select):
 
     async def callback(self, interaction: Interaction):
         try:
+            await interaction.response.defer()
+            
             category = self.values[0]
             embed = Embed(color=discord.Color.blue())
             embed.set_author(name=f'{category} Commands', icon_url=interaction.guild.icon.url if interaction.guild.icon else None)
@@ -133,39 +135,22 @@ class HelpDropdown(Select):
 
             elif category == 'Antinuke':
                 embed.description = "Server protection commands:"
-                embed.add_field(name='<:shield:1345381592335646758> `antinuke enable/disable`', value='Enable or disable antinuke protection', inline=False)
-                embed.add_field(name='<:whitelist:1345381592335646759> `whitelist add/remove <user>`', value='Manage whitelisted users', inline=False)
+                embed.add_field(name='<:antinuke1:1389284381247410287> `antinuke <enable/disable>`', value='Enable or disable server protection', inline=False)
+                embed.add_field(name='<:whitelist1:1389284381247410288> `whitelist <add/remove/list> [user]`', value='Manage trusted users for antinuke', inline=False)
 
             elif category == 'Tickets':
                 embed.description = "Ticket system commands:"
-                embed.add_field(name='<:ticket:1345381592335646760> `setup-tickets`', value='Set up the ticket system', inline=False)
-                embed.add_field(name='<:settings:1345381592335646761> `ticket-settings`', value='Configure ticket settings', inline=False)
+                embed.add_field(name='<:ticket1:1389284016099950693> `setup-tickets`', value='Create the ticket panel', inline=False)
+                embed.add_field(name='<:settings1:1389284016099950694> `ticket-settings`', value='Configure ticket system settings', inline=False)
 
-            await interaction.response.defer()
+            embed.set_footer(text=f'Prefix: {DEFAULT_PREFIX} | Total Commands: {len(bot.commands)}')
             await interaction.message.edit(embed=embed)
 
         except Exception as e:
             try:
-                await interaction.response.send_message(f'An error occurred: {str(e)}', ephemeral=True)
-            except discord.InteractionResponded:
                 await interaction.followup.send(f'An error occurred: {str(e)}', ephemeral=True)
-
-        if category == 'Antinuke':
-            embed.description = "Server protection commands:"
-            embed.add_field(name='<:antinuke1:1389284381247410287> `antinuke <enable/disable>`', value='Enable or disable server protection', inline=False)
-            embed.add_field(name='<:whitelist1:1389284381247410288> `whitelist <add/remove/list> [user]`', value='Manage trusted users for antinuke', inline=False)
-
-        elif category == 'Tickets':
-            embed.description = "Ticket system commands:"
-            embed.add_field(name='<:ticket1:1389284016099950693> `setup-tickets`', value='Create the ticket panel', inline=False)
-            embed.add_field(name='<:settings1:1389284016099950694> `ticket-settings`', value='Configure ticket system settings', inline=False)
-
-        embed.set_footer(text=f'Prefix: {DEFAULT_PREFIX} | Total Commands: {len(bot.commands)}')
-
-        try:
-            await interaction.response.edit_message(embed=embed)
-        except discord.InteractionResponded:
-            await interaction.message.edit(embed=embed)
+            except:
+                pass
 
 class HelpView(View):
     def __init__(self):
