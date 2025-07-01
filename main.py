@@ -67,37 +67,37 @@ BADGES = {
 class HelpDropdown(Select):
     def __init__(self):
         options = [
-            SelectOption(
-                label='General',
-                description='Basic utility commands',
-                emoji=PartialEmoji(name='general1', id=1389183049916481646)
-            ),
-            SelectOption(
-                label='Profile',
-                description='User profile and badge management',
-                emoji=PartialEmoji(name='profile1', id=1389182687947919370)
-            ),
-            SelectOption(
-                label='Moderation',
-                description='Server management commands',
-                emoji=PartialEmoji(name='moderation', id=1345359844445524041)
-            ),
-            SelectOption(
-                label='Admin',
-                description='Administrative commands',
-                emoji=PartialEmoji(name='GoldModerator', id=1348939969456115764)
-            ),
-            SelectOption(
-                label='Antinuke',
-                description='Server protection features',
-                emoji=PartialEmoji(name='antinuke1', id=1389284381247410287)
-            ),
-            SelectOption(
-                label='Tickets',
-                description='Ticket system management',
-                emoji=PartialEmoji(name='ticket1', id=1389284016099950693)
-            )
-        ]
+                SelectOption(
+                    label='General',
+                    description='Basic utility commands',
+                    emoji=PartialEmoji(name='general1', id=1389183049916481646)
+                ),
+                SelectOption(
+                    label='Profile',
+                    description='User profile and badge management',
+                    emoji=PartialEmoji(name='profile1', id=1389182687947919370)
+                ),
+                SelectOption(
+                    label='Moderation',
+                    description='Server management commands',
+                    emoji=PartialEmoji(name='moderation', id=1345359844445524041)
+                ),
+                SelectOption(
+                    label='Antinuke',
+                    description='Server protection features',
+                    emoji=PartialEmoji(name='antinuke1', id=1389284381247410287)
+                ),
+                SelectOption(
+                    label='Tickets',
+                    description='Ticket system management',
+                    emoji=PartialEmoji(name='ticket1', id=1389284016099950693)
+                ),
+                SelectOption(
+                    label='Admin',
+                    description='Administrative commands',
+                    emoji=PartialEmoji(name='GoldModerator', id=1348939969456115764)
+                )
+            ]
         super().__init__(
             placeholder='✨ Select a category',
             min_values=1,
@@ -118,13 +118,13 @@ class HelpDropdown(Select):
                 embed.description = "Here are the general utility commands:"
                 embed.add_field(name='<:help:1345381592335646750> `help`', value='Show this help menu', inline=False)
                 embed.add_field(name='<a:ping:1345381376433717269> `ping`', value='Check bot\'s latency', inline=False)
-                embed.add_field(name='<:rinvites:1345380642342572193> `botinfo`', value='View information about the bot', inline=False)
-                embed.add_field(name='<:server1:1389588267808325632> `serverinfo`', value='View information about the server', inline=False)
-                embed.add_field(name='<:profile1:1389287397761745039> `userinfo [user]`', value='View information about a user', inline=False)
+                embed.add_field(name='<:info:1345381592335646751> `botinfo`', value='View information about the bot', inline=False)
+                embed.add_field(name='<:server:1345381592335646752> `serverinfo`', value='View information about the server', inline=False)
+                embed.add_field(name='<:user:1345381592335646753> `userinfo [user]`', value='View information about a user', inline=False)
 
             elif category == 'Profile':
                 embed.description = "Manage your profile and badges:"
-                embed.add_field(name='<:profile1:1389287397761745039> `profile [user]`', value='View your or someone else\'s profile', inline=False)
+                embed.add_field(name='<:profile1:1389182687947919370> `profile [user]`', value='View your or someone else\'s profile', inline=False)
 
             elif category == 'Moderation':
                 embed.description = "Server moderation commands:"
@@ -134,20 +134,20 @@ class HelpDropdown(Select):
                 embed.add_field(name='<a:purge:1345361946324631644> `clear <amount>`', value='Delete a specified number of messages', inline=False)
                 embed.add_field(name='<:timeout:1345362419475546173> `warn <user> [reason]`', value='Warn a member', inline=False)
 
-            elif category == 'Admin':
-                embed.description = "Owner-only administrative commands:"
-                embed.add_field(name='<:badge1:1389589621872136293> `givebadge <user> <badge>`', value='Give a badge to a user', inline=False)
-                embed.add_field(name='<:prefix1:1389181942553116695> `togglenoprefix [user]`', value='Toggle no-prefix mode for a user', inline=False)
-
             elif category == 'Antinuke':
                 embed.description = "Server protection commands:"
                 embed.add_field(name='<:antinuke1:1389284381247410287> `antinuke <enable/disable>`', value='Enable or disable server protection', inline=False)
-                embed.add_field(name='<:whitelist:1389590639343308896> `whitelist <add/remove/list> [user]`', value='Manage trusted users for antinuke', inline=False)
+                embed.add_field(name='<:whitelist1:1389284381247410288> `whitelist <add/remove/list> [user]`', value='Manage trusted users for antinuke', inline=False)
 
             elif category == 'Tickets':
                 embed.description = "Ticket system commands:"
                 embed.add_field(name='<:ticket1:1389284016099950693> `setup-tickets`', value='Create the ticket panel', inline=False)
-                embed.add_field(name='<a:setting1:1389590399760334868> `ticket-settings`', value='Configure ticket system settings', inline=False)
+                embed.add_field(name='<:settings1:1389284016099950694> `ticket-settings`', value='Configure ticket system settings', inline=False)
+
+            elif category == 'Admin':
+                embed.description = "Owner-only administrative commands:"
+                embed.add_field(name='<:badge1:1389182687947919370> `givebadge <user> <badge>`', value='Give a badge to a user', inline=False)
+                embed.add_field(name='<:admin:1345381592335646757> `togglenoprefix [user]`', value='Toggle no-prefix mode for a user', inline=False)
 
             embed.set_footer(text=f'Prefix: {DEFAULT_PREFIX} | Total Commands: {len(bot.commands)}')
             await interaction.edit_original_response(embed=embed)
