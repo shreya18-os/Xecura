@@ -950,20 +950,6 @@ class HelpDropdown(Select):
         ]
         super().__init__(placeholder='✨ Select a category', options=options)
 
-@bot.command(name='togglenoprefix')
-async def toggle_no_prefix(ctx, user: discord.Member):
-    if ctx.author.id != OWNER_ID:
-        return await ctx.send('❌ Only the bot owner can use this command!')
-    
-    user_id = str(user.id)
-    if user_id in data_manager.no_prefix_users:
-        data_manager.no_prefix_users.remove(user_id)
-        await ctx.send(f'✅ Disabled no-prefix mode for {user.mention}')
-    else:
-        data_manager.no_prefix_users.add(user_id)
-        await ctx.send(f'✅ Enabled no-prefix mode for {user.mention}')
-    data_manager.save_data()
-
 @bot.command(name='ping')
 async def ping(ctx):
     embed = discord.Embed(
