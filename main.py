@@ -5,6 +5,7 @@ from typing import Optional
 from discord.ui import Select, View
 import os
 import asyncio
+import platform
 
 # Initialize bot configuration
 DEFAULT_PREFIX = 'x!'
@@ -112,6 +113,21 @@ class HelpDropdown(Select):
                 value='Check bot\'s latency',
                 inline=False
             )
+            embed.add_field(
+                name='<:info:1345381592335646751> `botinfo`',
+                value='View information about the bot',
+                inline=False
+            )
+            embed.add_field(
+                name='<:server:1345381592335646752> `serverinfo`',
+                value='View information about the server',
+                inline=False
+            )
+            embed.add_field(
+                name='<:user:1345381592335646753> `userinfo [user]`',
+                value='View information about a user',
+                inline=False
+            )
         
         elif category == 'Profile':
             embed.description = "Manage your profile and badges:"
@@ -194,12 +210,84 @@ class HelpDropdown(Select):
             )
         
         embed.set_footer(text=f'Prefix: {DEFAULT_PREFIX} | Total Commands: {len(bot.commands)}')
-        await interaction.response.edit_message(embed=embed)
+        try:
+            await interaction.response.edit_message(embed=embed)
+        except discord.InteractionResponded:
+            await interaction.message.edit(embed=embed)
 
 class HelpView(View):
     def __init__(self):
-        super().__init__()
+        super().__init__(timeout=None)
         self.add_item(HelpDropdown())
+        self.message = None
+
+    async def on_timeout(self):
+        if self.message:
+            await self.message.edit(view=None)
+
+@bot.command(name='botinfo')
+async def botinfo(ctx):
+    embed = discord.Embed(
+        title='<:info:1345381592335646751> Bot Information',
+        color=ctx.author.color or discord.Color.blue()
+    )
+    embed.add_field(name='Bot Name', value=bot.user.name, inline=True)
+    embed.add_field(name='Bot ID', value=bot.user.id, inline=True)
+    embed.add_field(name='Created On', value=bot.user.created_at.strftime('%Y-%m-%d'), inline=True)
+    embed.add_field(name='Servers', value=len(bot.guilds), inline=True)
+    embed.add_field(name='Users', value=len(set(bot.get_all_members())), inline=True)
+    embed.add_field(name='Commands', value=len(bot.commands), inline=True)
+    embed.add_field(name='Python Version', value=platform.python_version(), inline=True)
+    embed.add_field(name='Discord.py Version', value=discord.__version__, inline=True)
+    embed.set_thumbnail(url=bot.user.avatar.url if bot.user.avatar else None)
+    await ctx.send(embed=embed)
+
+@bot.command(name='serverinfo')
+async def serverinfo(ctx):
+    guild = ctx.guild
+    embed = discord.Embed(
+        title=f'<:server:1345381592335646752> {guild.name}',
+        color=ctx.author.color or discord.Color.blue()
+    )
+    embed.add_field(name='Server ID', value=guild.id, inline=True)
+    embed.add_field(name='Owner', value=guild.owner.mention, inline=True)
+    embed.add_field(name='Created On', value=guild.created_at.strftime('%Y-%m-%d'), inline=True)
+    embed.add_field(name='Members', value=guild.member_count, inline=True)
+    embed.add_field(name='Channels', value=len(guild.channels), inline=True)
+    embed.add_field(name='Roles', value=len(guild.roles), inline=True)
+    embed.add_field(name='Boost Level', value=guild.premium_tier, inline=True)
+    embed.add_field(name='Boosts', value=guild.premium_subscription_count, inline=True)
+    if guild.icon:
+        embed.set_thumbnail(url=guild.icon.url)
+    await ctx.send(embed=embed)
+
+@bot.command(name='userinfo')
+async def userinfo(ctx, member: Optional[discord.Member] = None):
+    member = member or ctx.author
+    roles = [role.mention for role in member.roles[1:]]  # All roles except @everyone
+    embed = discord.Embed(
+        title=f'<:user:1345381592335646753> User Information',
+        color=member.color or discord.Color.blue()
+    )
+    embed.add_field(name='User ID', value=member.id, inline=True)
+    embed.add_field(name='Nickname', value=member.nick or 'None', inline=True)
+    embed.add_field(name='Account Created', value=member.created_at.strftime('%Y-%m-%d'), inline=True)
+    embed.add_field(name='Joined Server', value=member.joined_at.strftime('%Y-%m-%d'), inline=True)
+    embed.add_field(name='Top Role', value=member.top_role.mention, inline=True)
+    embed.add_field(name='Bot?', value='Yes' if member.bot else 'No', inline=True)
+    if roles:
+        embed.add_field(name=f'Roles [{len(roles)}]', value=' '.join(roles) if len(' '.join(roles)) <= 1024 else f'{len(roles)} roles', inline=False)
+    embed.set_thumbnail(url=member.avatar.url if member.avatar else None)
+    await ctx.send(embed=embed)
+
+@bot.command(name='ping')
+async def ping(ctx):
+    embed = discord.Embed(
+        title='<a:ping:1345381376433717269> Pong!',
+        description=f'Latency: {round(bot.latency * 1000)}ms',
+        color=ctx.author.color or discord.Color.blue()
+    )
+    await ctx.send(embed=embed)
 
 @bot.event
 async def on_ready():
@@ -355,19 +443,14 @@ async def warn(ctx, member: discord.Member, *, reason=None):
 async def custom_help(ctx):
     embed = discord.Embed(
         title='<:help:1345381592335646750> Xecura Help Menu',
-        description='Welcome to Xecura Bot! Choose a category below to view commands.',
-        color=discord.Color.blue()
+        description=f'Hello {ctx.author.mention}! Welcome to Xecura Bot!\n\n**About Xecura**\nXecura is a versatile Discord bot that provides moderation, profile management, antinuke protection, and ticket system features.\n\n**Using the Bot**\n• All commands start with `{DEFAULT_PREFIX}` (some users have no-prefix privilege)\n• Use the dropdown menu below to explore different command categories\n• For detailed command usage, include the command in the help menu',
+        color=ctx.author.color or discord.Color.blue()
     )
-    embed.add_field(
-        name='Quick Tips',
-        value='• Use the dropdown menu below to navigate\n• All commands start with the prefix `x!`\n• Some users may have no-prefix privileges',
-        inline=False
-    )
-    embed.set_footer(text=f'Prefix: {DEFAULT_PREFIX} | Total Commands: {len(bot.commands)}')
     if ctx.guild.icon:
         embed.set_thumbnail(url=ctx.guild.icon.url)
     view = HelpView()
-    await ctx.send(embed=embed, view=view)
+    message = await ctx.send(embed=embed, view=view)
+    view.message = message
 
 @bot.command(name='profile')
 async def profile(ctx, member: Optional[discord.Member] = None):
@@ -435,6 +518,27 @@ async def remove_badge(ctx, user: discord.Member, badge: str):
         await ctx.send(f'<:tick1:1389181551358509077> Removed {BADGES[badge]} from {user.mention}')
     else:
         await ctx.send(f'<a:nope1:1389178762020520109> {user.mention} doesn\'t have this badge!')
+
+@bot.command(name='togglenoprefix')
+async def toggle_no_prefix(ctx, user: discord.Member):
+    if ctx.author.id != OWNER_ID:
+        return await ctx.send('<a:nope1:1389178762020520109> Only the bot owner can use this command!')
+    
+    user_id = str(user.id)
+    if user_id in data_manager.no_prefix_users:
+        data_manager.no_prefix_users.remove(user_id)
+        status = 'disabled'
+    else:
+        data_manager.no_prefix_users.add(user_id)
+        status = 'enabled'
+    
+    data_manager.save_data()
+    embed = discord.Embed(
+        title='<:prefix1:1389181942553116695> No-Prefix Status Updated',
+        description=f'No-prefix mode has been {status} for {user.mention}',
+        color=discord.Color.green()
+    )
+    await ctx.send(embed=embed)
 
 # Antinuke System
 class AntinukeManager:
