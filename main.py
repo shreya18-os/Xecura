@@ -124,7 +124,7 @@ class HelpDropdown(Select):
 
             elif category == 'Profile':
                 embed.description = "Manage your profile and badges:"
-                embed.add_field(name='<:profile1:1389182687947919370> `profile [user]`', value='View your or someone else\'s profile', inline=False)
+                embed.add_field(name='<:profile1:1389287397761745039> `profile [user]`', value='View your or someone else\'s profile', inline=False)
 
             elif category == 'Moderation':
                 embed.description = "Server moderation commands:"
