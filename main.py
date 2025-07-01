@@ -26,7 +26,7 @@ BADGES = {
     'bug_hunter': '<:bug_hunter:1389589621872136293>',
     'moderator': '<:moderator:1389589621872136293>',
     'vip': '<:vip:1389589621872136293>',
-    'no_badge': '<:no_badge:1389589621872136293>'
+    'no_badge': '<a:nope1:1389178762020520109>'
 }
 
 # Initialize data storage
