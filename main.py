@@ -280,14 +280,6 @@ async def userinfo(ctx, member: Optional[discord.Member] = None):
     embed.set_thumbnail(url=member.avatar.url if member.avatar else None)
     await ctx.send(embed=embed)
 
-@bot.command(name='ping')
-async def ping(ctx):
-    embed = discord.Embed(
-        title='<a:ping:1345381376433717269> Pong!',
-        description=f'Latency: {round(bot.latency * 1000)}ms',
-        color=ctx.author.color or discord.Color.blue()
-    )
-    await ctx.send(embed=embed)
 
 @bot.event
 async def on_ready():
