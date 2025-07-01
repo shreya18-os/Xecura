@@ -150,7 +150,7 @@ class HelpDropdown(Select):
             except discord.InteractionResponded:
                 await interaction.followup.send(f'An error occurred: {str(e)}', ephemeral=True)
 
-        elif category == 'Antinuke':
+        if category == 'Antinuke':
             embed.description = "Server protection commands:"
             embed.add_field(name='<:antinuke1:1389284381247410287> `antinuke <enable/disable>`', value='Enable or disable server protection', inline=False)
             embed.add_field(name='<:whitelist1:1389284381247410288> `whitelist <add/remove/list> [user]`', value='Manage trusted users for antinuke', inline=False)
