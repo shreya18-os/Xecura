@@ -434,6 +434,9 @@ async def profile(ctx, member: Optional[discord.Member] = None):
     badge_display = '\n'.join([BADGES[badge] for badge in badges]) if badges else BADGES['no_badge']
     badge_display = badge_display.replace('👑', '<:owner1:1389180694814654474>')\
                                .replace('🛡️', '<a:staff112:1389180853195771906>')\
+                               .replace('⭐', '<:vip1:1389618245803446302>')\
+                               .replace('🔨', '<:Management:1348937775554105355>')\
+                               .replace('🐛', '<:bughn1:1389618460606206002>')\
                                .replace('⚡', '<:admin1:1389181036755161221>')\
                                .replace('❌', '<a:nope1:1389178762020520109>')
     embed.add_field(
