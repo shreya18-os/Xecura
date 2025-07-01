@@ -118,29 +118,37 @@ class HelpDropdown(Select):
                 embed.description = "Manage your profile and badges:"
                 embed.add_field(name='<:profile1:1389182687947919370> `profile [user]`', value='View your or someone else\'s profile', inline=False)
 
-            try:
-                await interaction.response.edit_message(embed=embed)
-            except discord.InteractionResponded:
-                await interaction.message.edit(embed=embed)
+            elif category == 'Moderation':
+                embed.description = "Server moderation commands:"
+                embed.add_field(name='<:kick:1345360371002900550> `kick <user> [reason]`', value='Kick a member from the server', inline=False)
+                embed.add_field(name='<:ban:1345360761236488276> `ban <user> [reason]`', value='Ban a member from the server', inline=False)
+                embed.add_field(name='<:unban:1345361440969724019> `unban <user_id>`', value='Unban a user from the server', inline=False)
+                embed.add_field(name='<a:purge:1345361946324631644> `clear <amount>`', value='Delete a specified number of messages', inline=False)
+                embed.add_field(name='<:timeout:1345362419475546173> `warn <user> [reason]`', value='Warn a member', inline=False)
+
+            elif category == 'Admin':
+                embed.description = "Owner-only administrative commands:"
+                embed.add_field(name='<:badge1:1389182687947919370> `givebadge <user> <badge>`', value='Give a badge to a user', inline=False)
+                embed.add_field(name='<:admin:1345381592335646757> `togglenoprefix [user]`', value='Toggle no-prefix mode for a user', inline=False)
+
+            elif category == 'Antinuke':
+                embed.description = "Server protection commands:"
+                embed.add_field(name='<:shield:1345381592335646758> `antinuke enable/disable`', value='Enable or disable antinuke protection', inline=False)
+                embed.add_field(name='<:whitelist:1345381592335646759> `whitelist add/remove <user>`', value='Manage whitelisted users', inline=False)
+
+            elif category == 'Tickets':
+                embed.description = "Ticket system commands:"
+                embed.add_field(name='<:ticket:1345381592335646760> `setup-tickets`', value='Set up the ticket system', inline=False)
+                embed.add_field(name='<:settings:1345381592335646761> `ticket-settings`', value='Configure ticket settings', inline=False)
+
+            await interaction.response.defer()
+            await interaction.message.edit(embed=embed)
+
         except Exception as e:
             try:
                 await interaction.response.send_message(f'An error occurred: {str(e)}', ephemeral=True)
             except discord.InteractionResponded:
                 await interaction.followup.send(f'An error occurred: {str(e)}', ephemeral=True)
-
-        if category == 'Moderation':
-            embed.description = "Server moderation commands:"
-            embed.add_field(name='<:kick:1345360371002900550> `kick <user> [reason]`', value='Kick a member from the server', inline=False)
-            embed.add_field(name='<:ban:1345360761236488276> `ban <user> [reason]`', value='Ban a member from the server', inline=False)
-            embed.add_field(name='<:unban:1345361440969724019> `unban <user_id>`', value='Unban a user from the server', inline=False)
-            embed.add_field(name='<a:purge:1345361946324631644> `clear <amount>`', value='Delete a specified number of messages', inline=False)
-            embed.add_field(name='<:timeout:1345362419475546173> `warn <user> [reason]`', value='Warn a member', inline=False)
-
-        elif category == 'Admin':
-            embed.description = "Owner-only administrative commands:"
-            embed.add_field(name='<:badge1:1389182687947919370> `givebadge <user> <badge>`', value='Give a badge to a user', inline=False)
-            embed.add_field(name='<:nobadge1:1389178762020520109> `removebadge <user> <badge>`', value='Remove a badge from a user', inline=False)
-            embed.add_field(name='<:prefix1:1389181942553116695> `togglenoprefix <user>`', value='Toggle no-prefix mode for a user', inline=False)
 
         elif category == 'Antinuke':
             embed.description = "Server protection commands:"
