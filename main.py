@@ -842,35 +842,35 @@ async def setup_tickets(ctx):
 class HelpDropdown(Select):
     def __init__(self):
         options = [
-            discord.SelectOption(
+            SelectOption(
                 label='General',
                 description='Basic utility commands',
-                emoji='<:general1:1389183049916481646>'
+                emoji=PartialEmoji(name='general1', id=1389183049916481646)
             ),
-            discord.SelectOption(
+            SelectOption(
                 label='Profile',
                 description='User profile and badge management',
-                emoji='<:profile1:1389182687947919370>'
+                emoji=PartialEmoji(name='profile1', id=1389182687947919370)
             ),
-            discord.SelectOption(
+            SelectOption(
                 label='Moderation',
                 description='Server management commands',
-                emoji='<:moderation:1345359844445524041>'
+                emoji=PartialEmoji(name='moderation', id=1345359844445524041)
             ),
-            discord.SelectOption(
+            SelectOption(
                 label='Admin',
                 description='Administrative commands',
-                emoji='<:GoldModerator:1348939969456115764>'
+                emoji=PartialEmoji(name='GoldModerator', id=1348939969456115764)
             ),
-            discord.SelectOption(
+            SelectOption(
                 label='Antinuke',
                 description='Server protection commands',
-                emoji='<:antinuke1:1389284381247410287>'
+                emoji=PartialEmoji(name='antinuke1', id=1389284381247410287)
             ),
-            discord.SelectOption(
+            SelectOption(
                 label='Tickets',
                 description='Ticket system commands',
-                emoji='<:ticket1:1389284016099950693>'
+                emoji=PartialEmoji(name='ticket1', id=1389284016099950693)
             )
         ]
         super().__init__(placeholder='✨ Select a category', options=options)
