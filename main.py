@@ -60,6 +60,9 @@ BADGES = {
     'admin': '🛡️',
     'staff': '🔧',
     'no_prefix': '🎯',
+    'bug_hunter': '🐛',
+    'moderator': '🔨',
+    'vip': '⭐',
     'no_badge': '❌'
 }
 
@@ -168,7 +171,7 @@ class HelpDropdown(Select):
 
             elif category == 'Admin':
                 embed.description = "Owner-only administrative commands:"
-                embed.add_field(name='<:badge1:1389589621872136293> `givebadge <user> <badge>`', value='Give a badge to a user', inline=False)
+                embed.add_field(name='<:badge1:1389589621872136293> `givebadge <user> <badge>`', value='Give a badge to a user (Available badges: owner, admin, staff, bug_hunter, moderator, vip)', inline=False)
                 embed.add_field(name='<:prefix1:1389181942553116695> `togglenoprefix [user]`', value='Toggle no-prefix mode for a user', inline=False)
 
             embed.set_footer(text=f'Prefix: {DEFAULT_PREFIX} | Total Commands: {len(bot.commands)}')
