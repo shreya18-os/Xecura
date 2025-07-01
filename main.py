@@ -136,18 +136,18 @@ class HelpDropdown(Select):
 
             elif category == 'Admin':
                 embed.description = "Owner-only administrative commands:"
-                embed.add_field(name='<:badge1:1389182687947919370> `givebadge <user> <badge>`', value='Give a badge to a user', inline=False)
-                embed.add_field(name='<:admin:1345381592335646757> `togglenoprefix [user]`', value='Toggle no-prefix mode for a user', inline=False)
+                embed.add_field(name='<:badge1:1389589621872136293> `givebadge <user> <badge>`', value='Give a badge to a user', inline=False)
+                embed.add_field(name='<:prefix1:1389181942553116695> `togglenoprefix [user]`', value='Toggle no-prefix mode for a user', inline=False)
 
             elif category == 'Antinuke':
                 embed.description = "Server protection commands:"
                 embed.add_field(name='<:antinuke1:1389284381247410287> `antinuke <enable/disable>`', value='Enable or disable server protection', inline=False)
-                embed.add_field(name='<:whitelist1:1389284381247410288> `whitelist <add/remove/list> [user]`', value='Manage trusted users for antinuke', inline=False)
+                embed.add_field(name='<:whitelist:1389590639343308896> `whitelist <add/remove/list> [user]`', value='Manage trusted users for antinuke', inline=False)
 
             elif category == 'Tickets':
                 embed.description = "Ticket system commands:"
                 embed.add_field(name='<:ticket1:1389284016099950693> `setup-tickets`', value='Create the ticket panel', inline=False)
-                embed.add_field(name='<:settings1:1389284016099950694> `ticket-settings`', value='Configure ticket system settings', inline=False)
+                embed.add_field(name='<a:setting1:1389590399760334868> `ticket-settings`', value='Configure ticket system settings', inline=False)
 
             embed.set_footer(text=f'Prefix: {DEFAULT_PREFIX} | Total Commands: {len(bot.commands)}')
             await interaction.edit_original_response(embed=embed)
