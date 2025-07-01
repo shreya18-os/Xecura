@@ -52,8 +52,8 @@ class DataManager:
                 print(f'File size: {os.path.getsize(self.data_file)} bytes')
                 with open(self.data_file, 'r') as f:
                     data = json.load(f)
-                    self.badges = {user_id: set(badges) for user_id, badges in data.get('badges', {}).items()}
-                    self.no_prefix_users = set(data.get('no_prefix_users', []))
+                    self.badges = {user_id: badges for user_id, badges in data.get('badges', {}).items()}
+                    self.no_prefix_users = data.get('no_prefix_users', [])
                 print('Data loaded successfully')
             else:
                 print('No existing data file found, creating new one')
@@ -487,10 +487,10 @@ async def give_badge(ctx, user: discord.Member, badge: str):
     
     user_id = str(user.id)
     if user_id not in data_manager.badges:
-        data_manager.badges[user_id] = set()
+        data_manager.badges[user_id] = []
     
     if badge not in data_manager.badges[user_id]:
-        data_manager.badges[user_id].add(badge)
+    data_manager.badges[user_id].append(badge)
         data_manager.save_data()
         await ctx.send(f'<:tick1:1389181551358509077> Added {BADGES[badge]} to {user.mention}')
     else:
@@ -521,7 +521,7 @@ async def toggle_no_prefix(ctx, user: discord.Member):
         data_manager.no_prefix_users.remove(user_id)
         status = 'disabled'
     else:
-        data_manager.no_prefix_users.add(user_id)
+        data_manager.no_prefix_users.append(user_id)
         status = 'enabled'
     
     data_manager.save_data()  # Save changes to file
