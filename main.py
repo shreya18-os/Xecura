@@ -7,6 +7,7 @@ import json
 import os
 import asyncio
 import platform
+import datetime
 from typing import Optional
 
 
@@ -83,6 +84,11 @@ class HelpDropdown(Select):
                     emoji=PartialEmoji(name='moderation', id=1345359844445524041)
                 ),
                 SelectOption(
+                    label='Utility',
+                    description='Additional utility features',
+                    emoji=PartialEmoji(name='setting1', id=1389590399760334868)
+                ),
+                SelectOption(
                     label='Antinuke',
                     description='Server protection features',
                     emoji=PartialEmoji(name='antinuke1', id=1389284381247410287)
@@ -121,6 +127,9 @@ class HelpDropdown(Select):
                 embed.add_field(name='<:rinvites:1345380642342572193> `botinfo`', value='View information about the bot', inline=False)
                 embed.add_field(name='<:server1:1389588267808325632> `serverinfo`', value='View information about the server', inline=False)
                 embed.add_field(name='<:profile1:1389287397761745039> `userinfo [user]`', value='View information about a user', inline=False)
+                embed.add_field(name='🖼️ `avatar [user]`', value='View user\'s avatar', inline=False)
+                embed.add_field(name='🖼️ `servericon`', value='View server\'s icon', inline=False)
+                embed.add_field(name='👥 `members`', value='View server member statistics', inline=False)
 
             elif category == 'Profile':
                 embed.description = "Manage your profile and badges:"
@@ -133,6 +142,19 @@ class HelpDropdown(Select):
                 embed.add_field(name='<:unban:1345361440969724019> `unban <user_id>`', value='Unban a user from the server', inline=False)
                 embed.add_field(name='<a:purge:1345361946324631644> `clear <amount>`', value='Delete a specified number of messages', inline=False)
                 embed.add_field(name='<:timeout:1345362419475546173> `warn <user> [reason]`', value='Warn a member', inline=False)
+                embed.add_field(name='⏰ `slowmode <seconds>`', value='Set channel slowmode', inline=False)
+                embed.add_field(name='📝 `nickname <user> [new_nick]`', value='Change user\'s nickname', inline=False)
+                embed.add_field(name='🔇 `mute <user> <duration> [reason]`', value='Timeout a user', inline=False)
+                embed.add_field(name='🔊 `unmute <user>`', value='Remove timeout from a user', inline=False)
+
+            elif category == 'Utility':
+                embed.description = "Additional utility commands:"
+                embed.add_field(name='👑 `role <user> <role>`', value='Add/remove role from user', inline=False)
+                embed.add_field(name='📝 `createchannel <name> [type]`', value='Create a new channel', inline=False)
+                embed.add_field(name='🗑️ `deletechannel <channel>`', value='Delete a channel', inline=False)
+                embed.add_field(name='📨 `invites`', value='List all server invites', inline=False)
+                embed.add_field(name='🔒 `lock [channel]`', value='Lock a channel', inline=False)
+                embed.add_field(name='🔓 `unlock [channel]`', value='Unlock a channel', inline=False)
 
             elif category == 'Antinuke':
                 embed.description = "Server protection commands:"
@@ -891,7 +913,183 @@ async def ban(ctx, member: discord.Member, *, reason=None):
         )
         await ctx.send(embed=embed)
 
+# New General Commands
+@bot.command(name='avatar')
+async def avatar(ctx, member: Optional[discord.Member] = None):
+    member = member or ctx.author
+    embed = discord.Embed(
+        title=f'{member.name}\'s Avatar',
+        color=member.color
+    )
+    embed.set_image(url=member.avatar.url if member.avatar else member.default_avatar.url)
+    await ctx.send(embed=embed)
 
+@bot.command(name='servericon')
+async def servericon(ctx):
+    if not ctx.guild.icon:
+        return await ctx.send('<a:nope1:1389178762020520109> This server has no icon!')
+    embed = discord.Embed(
+        title=f'{ctx.guild.name}\'s Icon',
+        color=discord.Color.blue()
+    )
+    embed.set_image(url=ctx.guild.icon.url)
+    await ctx.send(embed=embed)
+
+@bot.command(name='members')
+async def members(ctx):
+    total = len(ctx.guild.members)
+    humans = len([m for m in ctx.guild.members if not m.bot])
+    bots = len([m for m in ctx.guild.members if m.bot])
+    embed = discord.Embed(
+        title=f'{ctx.guild.name} Member Stats',
+        description=f'Total Members: {total}\nHumans: {humans}\nBots: {bots}',
+        color=discord.Color.blue()
+    )
+    await ctx.send(embed=embed)
+
+# New Moderation Commands
+@bot.command(name='slowmode')
+@commands.has_permissions(manage_channels=True)
+async def slowmode(ctx, seconds: int):
+    if seconds < 0 or seconds > 21600:
+        return await ctx.send('<a:nope1:1389178762020520109> Slowmode must be between 0 and 21600 seconds!')
+    await ctx.channel.edit(slowmode_delay=seconds)
+    embed = discord.Embed(
+        title='<:tick1:1389181551358509077> Slowmode Updated',
+        description=f'Set slowmode to {seconds} seconds',
+        color=discord.Color.green()
+    )
+    await ctx.send(embed=embed)
+
+@bot.command(name='nickname')
+@commands.has_permissions(manage_nicknames=True)
+async def nickname(ctx, member: discord.Member, *, new_nick=None):
+    try:
+        await member.edit(nick=new_nick)
+        embed = discord.Embed(
+            title='<:tick1:1389181551358509077> Nickname Updated',
+            description=f'Changed {member.mention}\'s nickname to: {new_nick or "Reset to default"}',
+            color=discord.Color.green()
+        )
+        await ctx.send(embed=embed)
+    except discord.Forbidden:
+        await ctx.send('<a:nope1:1389178762020520109> I cannot change that member\'s nickname!')
+
+@bot.command(name='mute')
+@commands.has_permissions(moderate_members=True)
+async def mute(ctx, member: discord.Member, duration: int, *, reason=None):
+    if member.top_role >= ctx.author.top_role:
+        return await ctx.send('<a:nope1:1389178762020520109> You cannot mute someone with higher or equal role!')
+    try:
+        await member.timeout(discord.utils.utcnow() + datetime.timedelta(minutes=duration), reason=reason)
+        embed = discord.Embed(
+            title='<:tick1:1389181551358509077> Member Muted',
+            description=f'{member.mention} has been muted for {duration} minutes\nReason: {reason or "No reason provided"}',
+            color=discord.Color.orange()
+        )
+        await ctx.send(embed=embed)
+    except discord.Forbidden:
+        await ctx.send('<a:nope1:1389178762020520109> I cannot mute that member!')
+
+@bot.command(name='unmute')
+@commands.has_permissions(moderate_members=True)
+async def unmute(ctx, member: discord.Member):
+    try:
+        await member.timeout(None)
+        embed = discord.Embed(
+            title='<:tick1:1389181551358509077> Member Unmuted',
+            description=f'{member.mention} has been unmuted',
+            color=discord.Color.green()
+        )
+        await ctx.send(embed=embed)
+    except discord.Forbidden:
+        await ctx.send('<a:nope1:1389178762020520109> I cannot unmute that member!')
+
+# New Utility Commands
+@bot.command(name='role')
+@commands.has_permissions(manage_roles=True)
+async def role(ctx, member: discord.Member, *, role: discord.Role):
+    if role >= ctx.author.top_role:
+        return await ctx.send('<a:nope1:1389178762020520109> You cannot manage a role higher than your own!')
+    if role in member.roles:
+        await member.remove_roles(role)
+        action = 'removed from'
+    else:
+        await member.add_roles(role)
+        action = 'added to'
+    embed = discord.Embed(
+        title='<:tick1:1389181551358509077> Role Updated',
+        description=f'Role {role.mention} has been {action} {member.mention}',
+        color=discord.Color.green()
+    )
+    await ctx.send(embed=embed)
+
+@bot.command(name='createchannel')
+@commands.has_permissions(manage_channels=True)
+async def createchannel(ctx, channel_name, channel_type='text'):
+    if channel_type.lower() not in ['text', 'voice']:
+        return await ctx.send('<a:nope1:1389178762020520109> Invalid channel type! Use \'text\' or \'voice\'')
+    channel_type_obj = discord.ChannelType.text if channel_type.lower() == 'text' else discord.ChannelType.voice
+    channel = await ctx.guild.create_channel(name=channel_name, type=channel_type_obj)
+    embed = discord.Embed(
+        title='<:tick1:1389181551358509077> Channel Created',
+        description=f'Created new {channel_type} channel: {channel.mention}',
+        color=discord.Color.green()
+    )
+    await ctx.send(embed=embed)
+
+@bot.command(name='deletechannel')
+@commands.has_permissions(manage_channels=True)
+async def deletechannel(ctx, channel: discord.TextChannel):
+    await channel.delete()
+    embed = discord.Embed(
+        title='<:tick1:1389181551358509077> Channel Deleted',
+        description=f'Channel {channel.name} has been deleted',
+        color=discord.Color.red()
+    )
+    await ctx.send(embed=embed)
+
+@bot.command(name='invites')
+@commands.has_permissions(manage_guild=True)
+async def invites(ctx):
+    invites = await ctx.guild.invites()
+    if not invites:
+        return await ctx.send('<a:nope1:1389178762020520109> No invites found!')
+    embed = discord.Embed(
+        title=f'Invites for {ctx.guild.name}',
+        color=discord.Color.blue()
+    )
+    for invite in invites:
+        embed.add_field(
+            name=f'Invite by {invite.inviter}',
+            value=f'Code: {invite.code}\nUses: {invite.uses}\nExpires: {invite.expires_at or "Never"}',
+            inline=False
+        )
+    await ctx.send(embed=embed)
+
+@bot.command(name='lock')
+@commands.has_permissions(manage_channels=True)
+async def lock(ctx, channel: Optional[discord.TextChannel] = None):
+    channel = channel or ctx.channel
+    await channel.set_permissions(ctx.guild.default_role, send_messages=False)
+    embed = discord.Embed(
+        title='<:tick1:1389181551358509077> Channel Locked',
+        description=f'{channel.mention} has been locked',
+        color=discord.Color.red()
+    )
+    await ctx.send(embed=embed)
+
+@bot.command(name='unlock')
+@commands.has_permissions(manage_channels=True)
+async def unlock(ctx, channel: Optional[discord.TextChannel] = None):
+    channel = channel or ctx.channel
+    await channel.set_permissions(ctx.guild.default_role, send_messages=True)
+    embed = discord.Embed(
+        title='<:tick1:1389181551358509077> Channel Unlocked',
+        description=f'{channel.mention} has been unlocked',
+        color=discord.Color.green()
+    )
+    await ctx.send(embed=embed)
 
 # Run the bot
 bot.run(TOKEN)
