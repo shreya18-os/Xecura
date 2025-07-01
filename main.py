@@ -128,7 +128,7 @@ class HelpDropdown(Select):
             except discord.InteractionResponded:
                 await interaction.followup.send(f'An error occurred: {str(e)}', ephemeral=True)
 
-        elif category == 'Moderation':
+        if category == 'Moderation':
             embed.description = "Server moderation commands:"
             embed.add_field(name='<:kick:1345360371002900550> `kick <user> [reason]`', value='Kick a member from the server', inline=False)
             embed.add_field(name='<:ban:1345360761236488276> `ban <user> [reason]`', value='Ban a member from the server', inline=False)
