@@ -101,21 +101,32 @@ class HelpDropdown(Select):
         super().__init__(placeholder='✨ Select a category', options=options)
 
     async def callback(self, interaction: Interaction):
-        category = self.values[0]
-        embed = Embed(color=discord.Color.blue())
-        embed.set_author(name=f'{category} Commands', icon_url=interaction.guild.icon.url if interaction.guild.icon else None)
+        try:
+            category = self.values[0]
+            embed = Embed(color=discord.Color.blue())
+            embed.set_author(name=f'{category} Commands', icon_url=interaction.guild.icon.url if interaction.guild.icon else None)
 
-        if category == 'General':
-            embed.description = "Here are the general utility commands:"
-            embed.add_field(name='<:help:1345381592335646750> `help`', value='Show this help menu', inline=False)
-            embed.add_field(name='<a:ping:1345381376433717269> `ping`', value='Check bot\'s latency', inline=False)
-            embed.add_field(name='<:info:1345381592335646751> `botinfo`', value='View information about the bot', inline=False)
-            embed.add_field(name='<:server:1345381592335646752> `serverinfo`', value='View information about the server', inline=False)
-            embed.add_field(name='<:user:1345381592335646753> `userinfo [user]`', value='View information about a user', inline=False)
+            if category == 'General':
+                embed.description = "Here are the general utility commands:"
+                embed.add_field(name='<:help:1345381592335646750> `help`', value='Show this help menu', inline=False)
+                embed.add_field(name='<a:ping:1345381376433717269> `ping`', value='Check bot\'s latency', inline=False)
+                embed.add_field(name='<:info:1345381592335646751> `botinfo`', value='View information about the bot', inline=False)
+                embed.add_field(name='<:server:1345381592335646752> `serverinfo`', value='View information about the server', inline=False)
+                embed.add_field(name='<:user:1345381592335646753> `userinfo [user]`', value='View information about a user', inline=False)
 
-        elif category == 'Profile':
-            embed.description = "Manage your profile and badges:"
-            embed.add_field(name='<:profile1:1389182687947919370> `profile [user]`', value='View your or someone else\'s profile', inline=False)
+            elif category == 'Profile':
+                embed.description = "Manage your profile and badges:"
+                embed.add_field(name='<:profile1:1389182687947919370> `profile [user]`', value='View your or someone else\'s profile', inline=False)
+
+            try:
+                await interaction.response.edit_message(embed=embed)
+            except discord.InteractionResponded:
+                await interaction.message.edit(embed=embed)
+        except Exception as e:
+            try:
+                await interaction.response.send_message(f'An error occurred: {str(e)}', ephemeral=True)
+            except discord.InteractionResponded:
+                await interaction.followup.send(f'An error occurred: {str(e)}', ephemeral=True)
 
         elif category == 'Moderation':
             embed.description = "Server moderation commands:"
