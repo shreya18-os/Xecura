@@ -149,12 +149,12 @@ class HelpDropdown(Select):
 
             elif category == 'Utility':
                 embed.description = "Additional utility commands:"
-                embed.add_field(name='👑 `role <user> <role>`', value='Add/remove role from user', inline=False)
-                embed.add_field(name='📝 `createchannel <name> [type]`', value='Create a new channel', inline=False)
-                embed.add_field(name='🗑️ `deletechannel <channel>`', value='Delete a channel', inline=False)
-                embed.add_field(name='📨 `invites`', value='List all server invites', inline=False)
-                embed.add_field(name='🔒 `lock [channel]`', value='Lock a channel', inline=False)
-                embed.add_field(name='🔓 `unlock [channel]`', value='Unlock a channel', inline=False)
+                embed.add_field(name='<:role1:1389607749985370255> `role <user> <role>`', value='Add/remove role from user', inline=False)
+                embed.add_field(name='<:invites:1345380333222367285> `createchannel <name> [type]`', value='Create a new channel', inline=False)
+                embed.add_field(name='<:delch1:1389608102583603262> `deletechannel <channel>`', value='Delete a channel', inline=False)
+                embed.add_field(name='<:rinvites:1345380642342572193> `invites`', value='List all server invites', inline=False)
+                embed.add_field(name='<:lock1:1389608483292450827> `lock [channel]`', value='Lock a channel', inline=False)
+                embed.add_field(name='<:unlock1:1389608708073590819> `unlock [channel]`', value='Unlock a channel', inline=False)
 
             elif category == 'Antinuke':
                 embed.description = "Server protection commands:"
@@ -1061,7 +1061,7 @@ async def invites(ctx):
     )
     for invite in invites:
         embed.add_field(
-            name=f'Invite by {invite.inviter}',
+            name=f'<:rinvites:1345380642342572193> Invite by {invite.inviter}',
             value=f'Code: {invite.code}\nUses: {invite.uses}\nExpires: {invite.expires_at or "Never"}',
             inline=False
         )
