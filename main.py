@@ -87,6 +87,14 @@ class HelpDropdown(Select):
                 description='Administrative commands',
                 emoji=PartialEmoji(name='GoldModerator', id=1348939969456115764)
             ),
+        ]
+        super().__init__(
+            placeholder="Select a category",
+            min_values=1,
+            max_values=1,
+            options=options,
+            custom_id="help_dropdown"
+        )
             SelectOption(
                 label='Antinuke',
                 description='Server protection features',
@@ -102,8 +110,6 @@ class HelpDropdown(Select):
 
     async def callback(self, interaction: Interaction):
         try:
-            await interaction.response.defer()
-            
             category = self.values[0]
             embed = Embed(color=discord.Color.blue())
             embed.set_author(name=f'{category} Commands', icon_url=interaction.guild.icon.url if interaction.guild.icon else None)
@@ -144,23 +150,24 @@ class HelpDropdown(Select):
                 embed.add_field(name='<:settings1:1389284016099950694> `ticket-settings`', value='Configure ticket system settings', inline=False)
 
             embed.set_footer(text=f'Prefix: {DEFAULT_PREFIX} | Total Commands: {len(bot.commands)}')
-            await interaction.message.edit(embed=embed)
+            await interaction.response.edit_message(embed=embed)
 
         except Exception as e:
             try:
+                await interaction.response.send_message(f'An error occurred: {str(e)}', ephemeral=True)
+            except discord.InteractionResponded:
                 await interaction.followup.send(f'An error occurred: {str(e)}', ephemeral=True)
-            except:
-                pass
 
 class HelpView(View):
     def __init__(self):
         super().__init__(timeout=None)
         self.add_item(HelpDropdown())
-        self.message = None
 
     async def on_timeout(self):
-        if self.message:
+        try:
             await self.message.edit(view=None)
+        except:
+            pass
 
 @bot.command(name='botinfo')
 async def botinfo(ctx):
@@ -377,9 +384,7 @@ async def custom_help(ctx):
     )
     if ctx.guild.icon:
         embed.set_thumbnail(url=ctx.guild.icon.url)
-    view = HelpView()
-    message = await ctx.send(embed=embed, view=view)
-    view.message = message
+    await ctx.send(embed=embed, view=HelpView())
 
 @bot.command(name='profile')
 async def profile(ctx, member: Optional[discord.Member] = None):
@@ -868,16 +873,22 @@ class HelpDropdown(Select):
             ),
             SelectOption(
                 label='Antinuke',
-                description='Server protection commands',
+                description='Server protection features',
                 emoji=PartialEmoji(name='antinuke1', id=1389284381247410287)
             ),
             SelectOption(
                 label='Tickets',
-                description='Ticket system commands',
+                description='Support ticket system',
                 emoji=PartialEmoji(name='ticket1', id=1389284016099950693)
             )
         ]
-        super().__init__(placeholder='✨ Select a category', options=options)
+        super().__init__(
+            placeholder='✨ Select a category',
+            min_values=1,
+            max_values=1,
+            options=options,
+            custom_id='help_dropdown'
+        )
 
 @bot.command(name='ping')
 async def ping(ctx):
