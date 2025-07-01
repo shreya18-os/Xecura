@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands, Interaction, SelectOption, PartialEmoji, Embed
 from discord.ui import Select, View
-
+import traceback
 import json
 import os
 import asyncio
@@ -234,7 +234,6 @@ async def on_ready():
     print(f'{bot.user} is ready!')
     await bot.change_presence(activity=discord.Game(name=f"Xecura | x!help"))
 
-import traceback
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
