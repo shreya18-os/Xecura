@@ -127,9 +127,9 @@ class HelpDropdown(Select):
                 embed.add_field(name='<:rinvites:1345380642342572193> `botinfo`', value='View information about the bot', inline=False)
                 embed.add_field(name='<:server1:1389588267808325632> `serverinfo`', value='View information about the server', inline=False)
                 embed.add_field(name='<:profile1:1389287397761745039> `userinfo [user]`', value='View information about a user', inline=False)
-                embed.add_field(name='🖼️ `avatar [user]`', value='View user\'s avatar', inline=False)
-                embed.add_field(name='🖼️ `servericon`', value='View server\'s icon', inline=False)
-                embed.add_field(name='👥 `members`', value='View server member statistics', inline=False)
+                embed.add_field(name='<:avatar1:1389603923316441199> `avatar [user]`', value='View user\'s avatar', inline=False)
+                embed.add_field(name='<:server1:1389588267808325632> `servericon`', value='View server\'s icon', inline=False)
+                embed.add_field(name='<:members1:1389604287469977691> `members`', value='View server member statistics', inline=False)
 
             elif category == 'Profile':
                 embed.description = "Manage your profile and badges:"
@@ -142,10 +142,10 @@ class HelpDropdown(Select):
                 embed.add_field(name='<:unban:1345361440969724019> `unban <user_id>`', value='Unban a user from the server', inline=False)
                 embed.add_field(name='<a:purge:1345361946324631644> `clear <amount>`', value='Delete a specified number of messages', inline=False)
                 embed.add_field(name='<:timeout:1345362419475546173> `warn <user> [reason]`', value='Warn a member', inline=False)
-                embed.add_field(name='⏰ `slowmode <seconds>`', value='Set channel slowmode', inline=False)
-                embed.add_field(name='📝 `nickname <user> [new_nick]`', value='Change user\'s nickname', inline=False)
-                embed.add_field(name='🔇 `mute <user> <duration> [reason]`', value='Timeout a user', inline=False)
-                embed.add_field(name='🔊 `unmute <user>`', value='Remove timeout from a user', inline=False)
+                embed.add_field(name='<:slowmode1:1389604723610619984> `slowmode <seconds>`', value='Set channel slowmode', inline=False)
+                embed.add_field(name='<a:nickname1:1389605067622977579> `nickname <user> [new_nick]`', value='Change user\'s nickname', inline=False)
+                embed.add_field(name='<:mute1:1389605413132963951> `mute <user> <duration> [reason]`', value='Timeout a user', inline=False)
+                embed.add_field(name='<:unmute1:1389605655622717551> `unmute <user>`', value='Remove timeout from a user', inline=False)
 
             elif category == 'Utility':
                 embed.description = "Additional utility commands:"
@@ -942,7 +942,7 @@ async def members(ctx):
     bots = len([m for m in ctx.guild.members if m.bot])
     embed = discord.Embed(
         title=f'{ctx.guild.name} Member Stats',
-        description=f'Total Members: {total}\nHumans: {humans}\nBots: {bots}',
+        description=f'<:members1:1389604287469977691> Total Members: {total}\nHumans: {humans}\nBots: {bots}',
         color=discord.Color.blue()
     )
     await ctx.send(embed=embed)
@@ -956,7 +956,7 @@ async def slowmode(ctx, seconds: int):
     await ctx.channel.edit(slowmode_delay=seconds)
     embed = discord.Embed(
         title='<:tick1:1389181551358509077> Slowmode Updated',
-        description=f'Set slowmode to {seconds} seconds',
+        description=f'<:slowmode1:1389604723610619984>Set slowmode to {seconds} seconds',
         color=discord.Color.green()
     )
     await ctx.send(embed=embed)
@@ -984,7 +984,7 @@ async def mute(ctx, member: discord.Member, duration: int, *, reason=None):
         await member.timeout(discord.utils.utcnow() + datetime.timedelta(minutes=duration), reason=reason)
         embed = discord.Embed(
             title='<:tick1:1389181551358509077> Member Muted',
-            description=f'{member.mention} has been muted for {duration} minutes\nReason: {reason or "No reason provided"}',
+            description=f'{member.mention} has been muted <:mute1:1389605413132963951> for {duration} minutes\nReason: {reason or "No reason provided"}',
             color=discord.Color.orange()
         )
         await ctx.send(embed=embed)
