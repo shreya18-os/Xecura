@@ -18,32 +18,69 @@ OWNER_ID = 1101467683083530331
 # Load bot token from environment variable (Railway secrets)
 TOKEN = os.getenv('BOT_TOKEN')
 
+# Define available badges
+BADGES = {
+    'owner': '<:owner:1389589621872136293>',
+    'admin': '<:admin:1389589621872136293>',
+    'staff': '<:staff:1389589621872136293>',
+    'bug_hunter': '<:bug_hunter:1389589621872136293>',
+    'moderator': '<:moderator:1389589621872136293>',
+    'vip': '<:vip:1389589621872136293>',
+    'no_badge': '<:no_badge:1389589621872136293>'
+}
+
 # Initialize data storage
+# Get data directory from environment variable or use current directory as fallback
+DATA_DIR = os.getenv('XECURA_DATA_DIR', os.getcwd())
+
 class DataManager:
     def __init__(self):
         self.badges = {}
         self.no_prefix_users = set()
-        self.data_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.json')
+        self.data_dir = os.getcwd()
+        print(f'Using data directory: {self.data_dir}')
+        
+        self.data_file = os.path.join(self.data_dir, 'data.json')
+        print(f'Data file path: {self.data_file}')
         self.load_data()
     
     def load_data(self):
         try:
-            with open(self.data_file, 'r') as f:
-                data = json.load(f)
-                # Convert lists to sets for badges
-                self.badges = {user_id: set(badges) for user_id, badges in data.get('badges', {}).items()}
-                self.no_prefix_users = set(data.get('no_prefix_users', []))
-        except FileNotFoundError:
-            self.save_data()
+            print(f'Attempting to load data from {self.data_file}')
+            if os.path.exists(self.data_file):
+                print(f'File exists and is readable: {os.access(self.data_file, os.R_OK)}')
+                print(f'File size: {os.path.getsize(self.data_file)} bytes')
+                with open(self.data_file, 'r') as f:
+                    data = json.load(f)
+                    self.badges = {user_id: set(badges) for user_id, badges in data.get('badges', {}).items()}
+                    self.no_prefix_users = set(data.get('no_prefix_users', []))
+                print('Data loaded successfully')
+            else:
+                print('No existing data file found, creating new one')
+                self.save_data()
+        except Exception as e:
+            print(f'Error loading data: {str(e)}')
+            print(f'Error type: {type(e).__name__}')
+            traceback.print_exc()
     
     def save_data(self):
-        with open(self.data_file, 'w') as f:
-            # Convert sets back to lists for JSON serialization
+        try:
+            print(f'Attempting to save data to {self.data_file}')
+            
             json_data = {
                 'badges': {user_id: list(badges) for user_id, badges in self.badges.items()},
                 'no_prefix_users': list(self.no_prefix_users)
             }
-            json.dump(json_data, f, indent=4)
+            
+            with open(self.data_file, 'w') as f:
+                json.dump(json_data, f, indent=4)
+            print('Data saved successfully')
+            print(f'File exists after save: {os.path.exists(self.data_file)}')
+            print(f'File size after save: {os.path.getsize(self.data_file)} bytes')
+        except Exception as e:
+            print(f'Error saving data: {str(e)}')
+            print(f'Error type: {type(e).__name__}')
+            traceback.print_exc()
 
 data_manager = DataManager()
 
@@ -54,18 +91,6 @@ def get_prefix(bot, message):
     return commands.when_mentioned_or(DEFAULT_PREFIX)(bot, message)
 
 bot = commands.Bot(command_prefix=get_prefix, intents=discord.Intents.all(), help_command=None)
-
-# Badge definitions
-BADGES = {
-    'owner': '👑',
-    'admin': '🛡️',
-    'staff': '🔧',
-    'no_prefix': '🎯',
-    'bug_hunter': '🐛',
-    'moderator': '🔨',
-    'vip': '⭐',
-    'no_badge': '❌'
-}
 
 # Help command with dropdown
 
@@ -668,7 +693,6 @@ class TicketView(discord.ui.View):
         
         await interaction.response.send_message(f'Your ticket has been created: {channel.mention}', ephemeral=True)
 
-
 @bot.command(name='ticket-settings')
 @commands.has_permissions(administrator=True)
 async def ticket_settings(ctx):
@@ -705,90 +729,57 @@ class AntinukeManager:
 
 antinuke_manager = AntinukeManager()
 
-# Antinuke Event Listeners
-@bot.event
-async def on_member_ban(guild, user):
-    guild_id = str(guild.id)
-    if guild_id not in antinuke_manager.enabled_guilds:
-        return
-
-    async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.ban):
-        if str(entry.user.id) not in antinuke_manager.whitelisted_users.get(guild_id, set()):
-            try:
-                await guild.unban(user, reason='Antinuke: Unauthorized ban')
-                await entry.user.ban(reason='Antinuke: Unauthorized ban action')
-            except discord.Forbidden:
-                pass
-
-@bot.event
-async def on_member_remove(member):
-    guild = member.guild
-    guild_id = str(guild.id)
-    if guild_id not in antinuke_manager.enabled_guilds:
-        return
-
-    async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.kick):
-        if str(entry.user.id) not in antinuke_manager.whitelisted_users.get(guild_id, set()):
-            try:
-                await entry.user.ban(reason='Antinuke: Unauthorized kick action')
-            except discord.Forbidden:
-                pass
-
-@bot.event
-async def on_guild_channel_delete(channel):
-    guild = channel.guild
-    guild_id = str(guild.id)
-    if guild_id not in antinuke_manager.enabled_guilds:
-        return
-
-    async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.channel_delete):
-        if str(entry.user.id) not in antinuke_manager.whitelisted_users.get(guild_id, set()):
-            try:
-                await entry.user.ban(reason='Antinuke: Unauthorized channel deletion')
-            except discord.Forbidden:
-                pass
-
-@bot.event
-async def on_guild_role_delete(role):
-    guild = role.guild
-    guild_id = str(guild.id)
-    if guild_id not in antinuke_manager.enabled_guilds:
-        return
-
-    async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.role_delete):
-        if str(entry.user.id) not in antinuke_manager.whitelisted_users.get(guild_id, set()):
-            try:
-                await entry.user.ban(reason='Antinuke: Unauthorized role deletion')
-            except discord.Forbidden:
-                pass
-
-@bot.command(name='antinuke')
+@bot.command(name='whitelist')
 @commands.has_permissions(administrator=True)
-async def antinuke(ctx, action: str = None):
-    if action is None:
-        status = 'enabled' if str(ctx.guild.id) in antinuke_manager.enabled_guilds else 'disabled'
+async def whitelist(ctx, action: str, member: Optional[discord.Member] = None):
+    guild_id = str(ctx.guild.id)
+    
+    if action.lower() not in ['add', 'remove', 'list']:
         embed = discord.Embed(
-            title='<:shield:1345382219774087168> Antinuke Status',
-            description=f'Antinuke is currently **{status}** for this server.',
+            title='<a:nope1:1389178762020520109> Error',
+            description='Invalid action! Use `add`, `remove`, or `list`.',
+            color=discord.Color.red()
+        )
+        return await ctx.send(embed=embed)
+    
+    if action.lower() != 'list' and not member:
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='Please specify a member to add/remove from whitelist!',
+            color=discord.Color.red()
+        )
+        return await ctx.send(embed=embed)
+    
+    if guild_id not in antinuke_manager.whitelisted_users:
+        antinuke_manager.whitelisted_users[guild_id] = set()
+    
+    if action.lower() == 'list':
+        whitelisted = antinuke_manager.whitelisted_users[guild_id]
+        if not whitelisted:
+            description = 'No users are whitelisted in this server.'
+        else:
+            users = ['<@' + user_id + '>' for user_id in whitelisted]
+            description = '**Whitelisted Users:**\n' + '\n'.join(users)
+        
+        embed = discord.Embed(
+            title='✅ Whitelist',
+            description=description,
             color=discord.Color.blue()
         )
         return await ctx.send(embed=embed)
     
-    if action.lower() not in ['enable', 'disable']:
-        return await ctx.send('<a:nope1:1389178762020520109> Invalid action! Use `enable` or `disable`.')
-    
-    guild_id = str(ctx.guild.id)
-    if action.lower() == 'enable':
-        antinuke_manager.enabled_guilds.add(guild_id)
-        msg = 'enabled'
+    member_id = str(member.id)
+    if action.lower() == 'add':
+        antinuke_manager.whitelisted_users[guild_id].add(member_id)
+        status = 'added to'
     else:
-        antinuke_manager.enabled_guilds.discard(guild_id)
-        msg = 'disabled'
+        antinuke_manager.whitelisted_users[guild_id].discard(member_id)
+        status = 'removed from'
     
     antinuke_manager.save_data()
     embed = discord.Embed(
-        title='<:shield:1345382219774087168> Antinuke Updated',
-        description=f'Antinuke has been {msg} for this server.',
+        title='✅ Whitelist Updated',
+        description=f'{member.mention} has been {status} the whitelist.',
         color=discord.Color.green()
     )
     await ctx.send(embed=embed)
