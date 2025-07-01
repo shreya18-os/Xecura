@@ -108,6 +108,8 @@ class HelpDropdown(Select):
 
     async def callback(self, interaction: Interaction):
         try:
+            await interaction.response.defer()
+            
             category = self.values[0]
             embed = Embed(color=discord.Color.blue())
             embed.set_author(name=f'{category} Commands', icon_url=interaction.guild.icon.url if interaction.guild.icon else None)
@@ -148,18 +150,13 @@ class HelpDropdown(Select):
                 embed.add_field(name='<:settings1:1389284016099950694> `ticket-settings`', value='Configure ticket system settings', inline=False)
 
             embed.set_footer(text=f'Prefix: {DEFAULT_PREFIX} | Total Commands: {len(bot.commands)}')
-            
-            try:
-                await interaction.response.edit_message(embed=embed)
-            except discord.InteractionResponded:
-                await interaction.message.edit(embed=embed)
+            await interaction.edit_original_response(embed=embed)
 
         except Exception as e:
-            error_msg = f'An error occurred while updating the help menu: {str(e)}'
             try:
-                await interaction.response.send_message(error_msg, ephemeral=True)
-            except discord.InteractionResponded:
-                await interaction.followup.send(error_msg, ephemeral=True)
+                await interaction.followup.send(f'An error occurred while updating the help menu: {str(e)}', ephemeral=True)
+            except:
+                pass
 
 class HelpView(View):
     def __init__(self):
@@ -856,47 +853,7 @@ async def setup_tickets(ctx):
     await ctx.send(embed=embed, view=TicketView())
 
 # Update help menu with new categories
-class HelpDropdown(Select):
-    def __init__(self):
-        options = [
-            SelectOption(
-                label='General',
-                description='Basic utility commands',
-                emoji=PartialEmoji(name='general1', id=1389183049916481646)
-            ),
-            SelectOption(
-                label='Profile',
-                description='User profile and badge management',
-                emoji=PartialEmoji(name='profile1', id=1389182687947919370)
-            ),
-            SelectOption(
-                label='Moderation',
-                description='Server management commands',
-                emoji=PartialEmoji(name='moderation', id=1345359844445524041)
-            ),
-            SelectOption(
-                label='Admin',
-                description='Administrative commands',
-                emoji=PartialEmoji(name='GoldModerator', id=1348939969456115764)
-            ),
-            SelectOption(
-                label='Antinuke',
-                description='Server protection features',
-                emoji=PartialEmoji(name='antinuke1', id=1389284381247410287)
-            ),
-            SelectOption(
-                label='Tickets',
-                description='Support ticket system',
-                emoji=PartialEmoji(name='ticket1', id=1389284016099950693)
-            )
-        ]
-        super().__init__(
-            placeholder='✨ Select a category',
-            min_values=1,
-            max_values=1,
-            options=options,
-            custom_id='help_dropdown'
-        )
+# Help menu implementation moved to the top of the file
 
 @bot.command(name='ping')
 async def ping(ctx):
