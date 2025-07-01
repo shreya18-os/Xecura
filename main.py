@@ -99,45 +99,6 @@ class HelpDropdown(Select):
             )
         ]
         super().__init__(
-            placeholder="Select a category",
-            min_values=1,
-            max_values=1,
-            custom_id="help_dropdown",
-            options=options
-        )
-            SelectOption(
-                label='General',
-                description='Basic utility commands',
-                emoji=PartialEmoji(name='general1', id=1389183049916481646)
-            ),
-            SelectOption(
-                label='Profile',
-                description='User profile and badge management',
-                emoji=PartialEmoji(name='profile1', id=1389182687947919370)
-            ),
-            SelectOption(
-                label='Moderation',
-                description='Server management commands',
-                emoji=PartialEmoji(name='moderation', id=1345359844445524041)
-            ),
-            SelectOption(
-                label='Admin',
-                description='Administrative commands',
-                emoji=PartialEmoji(name='GoldModerator', id=1348939969456115764)
-            ),
-            SelectOption(
-                label='Antinuke',
-                description='Server protection features',
-                emoji=PartialEmoji(name='antinuke1', id=1389284381247410287)
-            ),
-            SelectOption(
-                label='Tickets',
-                description='Support ticket system',
-                emoji=PartialEmoji(name='ticket1', id=1389284016099950693)
-            )
-        ]
-
-        super().__init__(
             placeholder='✨ Select a category',
             min_values=1,
             max_values=1,
