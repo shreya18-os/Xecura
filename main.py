@@ -20,12 +20,12 @@ TOKEN = os.getenv('BOT_TOKEN')
 
 # Define available badges
 BADGES = {
-    'owner': '<:owner:1389589621872136293>',
-    'admin': '<:admin:1389589621872136293>',
-    'staff': '<:staff:1389589621872136293>',
-    'bug_hunter': '<:bug_hunter:1389589621872136293>',
-    'moderator': '<:moderator:1389589621872136293>',
-    'vip': '<:vip:1389589621872136293>',
+    'owner': '<:owner1:1389180694814654474>',
+    'admin': '<:admin1:1389181036755161221>',
+    'staff': '<a:staff112:1389180853195771906>',
+    'bug_hunter': '<:bughn1:1389618460606206002>',
+    'moderator': '<:Management:1348937775554105355>',
+    'vip': '<:vip1:1389618245803446302>',
     'no_badge': '<a:nope1:1389178762020520109>'
 }
 
