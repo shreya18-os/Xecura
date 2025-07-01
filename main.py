@@ -118,9 +118,9 @@ class HelpDropdown(Select):
                 embed.description = "Here are the general utility commands:"
                 embed.add_field(name='<:help:1345381592335646750> `help`', value='Show this help menu', inline=False)
                 embed.add_field(name='<a:ping:1345381376433717269> `ping`', value='Check bot\'s latency', inline=False)
-                embed.add_field(name='<:info:1345381592335646751> `botinfo`', value='View information about the bot', inline=False)
-                embed.add_field(name='<:server:1345381592335646752> `serverinfo`', value='View information about the server', inline=False)
-                embed.add_field(name='<:user:1345381592335646753> `userinfo [user]`', value='View information about a user', inline=False)
+                embed.add_field(name='<:rinvites:1345380642342572193> `botinfo`', value='View information about the bot', inline=False)
+                embed.add_field(name='<:server1:1389588267808325632> `serverinfo`', value='View information about the server', inline=False)
+                embed.add_field(name='<:profile1:1389287397761745039> `userinfo [user]`', value='View information about a user', inline=False)
 
             elif category == 'Profile':
                 embed.description = "Manage your profile and badges:"
@@ -176,7 +176,7 @@ class HelpView(View):
 @bot.command(name='botinfo')
 async def botinfo(ctx):
     embed = discord.Embed(
-        title='<:info:1345381592335646751> Bot Information',
+        title='<:rinvites:1345380642342572193> Bot Information',
         color=ctx.author.color or discord.Color.blue()
     )
     embed.add_field(name='Bot Name', value=bot.user.name, inline=True)
@@ -194,7 +194,7 @@ async def botinfo(ctx):
 async def serverinfo(ctx):
     guild = ctx.guild
     embed = discord.Embed(
-        title=f'<:server:1345381592335646752> {guild.name}',
+        title=f'<:server1:1389588267808325632>> {guild.name}',
         color=ctx.author.color or discord.Color.blue()
     )
     embed.add_field(name='Server ID', value=guild.id, inline=True)
