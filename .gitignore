@@ -31,6 +31,9 @@ ENV/
 *.swp
 *.swo
 
+# Environment Variables
+.env
+
 # Bot Data
 data.json
 
