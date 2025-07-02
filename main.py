@@ -517,10 +517,12 @@ async def toggle_no_prefix(ctx, user: discord.Member):
         data_manager.no_prefix_users.remove(user_id)
         status = 'disabled'
     else:
-        data_manager.no_prefix_users.append(user_id)
+        data_manager.no_prefix_users.add(user_id)
         status = 'enabled'
     
     data_manager.save_data()  # Save changes to file
+    print(f'[DEBUG] Toggled no-prefix mode for user {user_id} ({status})')
+    print(f'[DEBUG] Updated no_prefix_users: {data_manager.no_prefix_users}')
     await ctx.send(f'<:tick1:1389181551358509077> No-prefix mode {status} for {user.mention}')
 
 # Antinuke System
