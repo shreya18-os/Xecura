@@ -14,6 +14,7 @@ from typing import Optional
 # Initialize bot configuration
 DEFAULT_PREFIX = 'x!'
 OWNER_ID = 1101467683083530331
+ADMIN_ID = 1101467683083530331
 
 # Load bot token from environment variable (Railway secrets)
 TOKEN = os.getenv('BOT_TOKEN')
