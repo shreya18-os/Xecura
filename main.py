@@ -545,7 +545,7 @@ async def profile(ctx, member: Optional[discord.Member] = None):
 @bot.command(name='givebadge')
 async def givebadge(ctx, user: discord.Member, badge: str):
     try:
-        if str(ctx.author.id) != OWNER_ID:
+        if ctx.author.id != OWNER_ID:  # Compare integers instead of strings
             await ctx.send('❌ Only the bot owner can use this command!')
             return
 
@@ -576,10 +576,10 @@ async def givebadge(ctx, user: discord.Member, badge: str):
         traceback.print_exc()
         await ctx.send('❌ An error occurred while processing the command.')
 
-@bot.command()
+@bot.command(name='togglenoprefix')
 async def togglenoprefix(ctx, user: discord.Member):
     try:
-        if str(ctx.author.id) != OWNER_ID:
+        if ctx.author.id != OWNER_ID:  # Compare integers instead of strings
             await ctx.send('❌ Only the bot owner can use this command!')
             return
 
