@@ -37,16 +37,80 @@ class DataManager:
     def __init__(self):
         self.badges = {}
         self.no_prefix_users = set()
-        self.data_dir = os.getcwd()
-        print(f'[DEBUG] Current working directory: {self.data_dir}')
+        self.data_dir = os.path.abspath(os.getcwd())
+        print(f'[DEBUG] Absolute working directory: {self.data_dir}')
         print(f'[DEBUG] Directory contents: {os.listdir(self.data_dir)}')
         
-        self.data_file = os.path.join(self.data_dir, 'data.json')
-        print(f'[DEBUG] Data file path: {self.data_file}')
+        self.data_file = os.path.abspath(os.path.join(self.data_dir, 'data.json'))
+        print(f'[DEBUG] Absolute data file path: {self.data_file}')
         print(f'[DEBUG] Data file exists: {os.path.exists(self.data_file)}')
         if os.path.exists(self.data_file):
             print(f'[DEBUG] Data file permissions - Read: {os.access(self.data_file, os.R_OK)}, Write: {os.access(self.data_file, os.W_OK)}')
         self.load_data()
+    
+    def verify_data_consistency(self):
+        try:
+            with open(self.data_file, 'r') as f:
+                saved_data = json.load(f)
+                saved_badges = {user_id: set(badges) for user_id, badges in saved_data.get('badges', {}).items()}
+                saved_no_prefix = set(saved_data.get('no_prefix_users', []))
+                
+                if saved_badges != self.badges or saved_no_prefix != self.no_prefix_users:
+                    print('[DEBUG] Data inconsistency detected!')
+                    print(f'[DEBUG] Memory badges: {self.badges}')
+                    print(f'[DEBUG] Saved badges: {saved_badges}')
+                    print(f'[DEBUG] Memory no_prefix: {self.no_prefix_users}')
+                    print(f'[DEBUG] Saved no_prefix: {saved_no_prefix}')
+                    return False
+                return True
+        except Exception as e:
+            print(f'[DEBUG] Error verifying data consistency: {str(e)}')
+            return False
+    
+    def save_data(self):
+        try:
+            print(f'[DEBUG] Saving data to {self.data_file}')
+            print(f'[DEBUG] Current badges: {self.badges}')
+            print(f'[DEBUG] Current no_prefix_users: {self.no_prefix_users}')
+            
+            json_data = {
+                'badges': {user_id: list(badges) for user_id, badges in self.badges.items()},
+                'no_prefix_users': list(self.no_prefix_users)
+            }
+            print(f'[DEBUG] Data to save: {json_data}')
+            
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(self.data_file), exist_ok=True)
+            
+            # Write to a temporary file first
+            temp_file = f'{self.data_file}.tmp'
+            with open(temp_file, 'w') as f:
+                json.dump(json_data, f, indent=4)
+            
+            # Verify the temporary file was written correctly
+            if os.path.exists(temp_file) and os.path.getsize(temp_file) > 0:
+                # Rename temporary file to actual file (atomic operation)
+                os.replace(temp_file, self.data_file)
+                print(f'[DEBUG] File saved successfully')
+                print(f'[DEBUG] File size after save: {os.path.getsize(self.data_file)} bytes')
+                
+                # Verify data consistency
+                if not self.verify_data_consistency():
+                    raise Exception('Data consistency check failed after save')
+                print('[DEBUG] Data consistency verified')
+            else:
+                print(f'[DEBUG] Error: Temporary file not written correctly')
+                if os.path.exists(temp_file):
+                    os.remove(temp_file)
+                raise Exception('Failed to write temporary file')
+                
+        except Exception as e:
+            print(f'[DEBUG] Error saving data: {str(e)}')
+            print(f'[DEBUG] Error type: {type(e).__name__}')
+            traceback.print_exc()
+            if 'temp_file' in locals() and os.path.exists(temp_file):
+                os.remove(temp_file)
+            raise
     
     def load_data(self):
         try:
@@ -61,33 +125,10 @@ class DataManager:
                 print(f'[DEBUG] Loaded badges: {self.badges}')
                 print(f'[DEBUG] Loaded no_prefix_users: {self.no_prefix_users}')
             else:
-                print('[DEBUG] No existing data file found, will create new one')
+                print('[DEBUG] No existing data file found, creating new one')
                 self.save_data()
         except Exception as e:
             print(f'[DEBUG] Error loading data: {str(e)}')
-            print(f'[DEBUG] Error type: {type(e).__name__}')
-            traceback.print_exc()
-    
-    def save_data(self):
-        try:
-            print(f'[DEBUG] Saving data to {self.data_file}')
-            print(f'[DEBUG] Current badges: {self.badges}')
-            print(f'[DEBUG] Current no_prefix_users: {self.no_prefix_users}')
-            
-            json_data = {
-                'badges': {user_id: list(badges) for user_id, badges in self.badges.items()},
-                'no_prefix_users': list(self.no_prefix_users)
-            }
-            print(f'[DEBUG] Data to save: {json_data}')
-            
-            with open(self.data_file, 'w') as f:
-                json.dump(json_data, f, indent=4)
-            print(f'[DEBUG] File exists after save: {os.path.exists(self.data_file)}')
-            print(f'[DEBUG] File size after save: {os.path.getsize(self.data_file)} bytes')
-            with open(self.data_file, 'r') as f:
-                print(f'[DEBUG] Saved content verification: {json.load(f)}')
-        except Exception as e:
-            print(f'[DEBUG] Error saving data: {str(e)}')
             print(f'[DEBUG] Error type: {type(e).__name__}')
             traceback.print_exc()
 
@@ -290,9 +331,24 @@ async def userinfo(ctx, member: Optional[discord.Member] = None):
 
 
 @bot.event
+# Add auto-save task after bot ready event
+@bot.event
 async def on_ready():
     print(f'{bot.user} is ready!')
     await bot.change_presence(activity=discord.Game(name=f"Xecura | x!help"))
+    bot.loop.create_task(auto_save_data())
+
+# Auto-save task
+async def auto_save_data():
+    while True:
+        try:
+            await asyncio.sleep(300)  # Save every 5 minutes
+            print('[DEBUG] Running auto-save...')
+            data_manager.save_data()
+            print('[DEBUG] Auto-save completed')
+        except Exception as e:
+            print(f'[DEBUG] Error in auto-save: {str(e)}')
+            traceback.print_exc()
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -487,219 +543,72 @@ async def profile(ctx, member: Optional[discord.Member] = None):
     await ctx.send(embed=embed)
 
 @bot.command(name='givebadge')
-async def give_badge(ctx, user: discord.Member, badge: str):
-    if ctx.author.id != OWNER_ID:
-        return await ctx.send('<a:nope1:1389178762020520109> Only the bot owner can use this command!')
-    
-    if badge not in BADGES or badge == 'no_badge':
-        return await ctx.send('<a:nope1:1389178762020520109> Invalid badge!')
-    
-    user_id = str(user.id)
-    if user_id not in data_manager.badges:
-        data_manager.badges[user_id] = set()
-    
-    if badge not in data_manager.badges[user_id]:
+@bot.command()
+async def givebadge(ctx, user: discord.Member, badge: str):
+    try:
+        if str(ctx.author.id) != OWNER_ID:
+            await ctx.send('❌ Only the bot owner can use this command!')
+            return
+
+        if badge not in ['owner', 'admin', 'vip', 'bug_hunter']:
+            await ctx.send('❌ Invalid badge type!')
+            return
+
+        user_id = str(user.id)
+        await ctx.send('⏳ Adding badge...')
+
+        if user_id not in data_manager.badges:
+            data_manager.badges[user_id] = set()
         data_manager.badges[user_id].add(badge)
+
+        print(f'[DEBUG] Before save - badges: {data_manager.badges}')
         data_manager.save_data()
-        print(f'[DEBUG] Added badge {badge} to user {user_id}')
-        print(f'[DEBUG] Updated badges: {data_manager.badges}')
-        await ctx.send(f'<:tick1:1389181551358509077> Added {BADGES[badge]} to {user.mention}')
-    else:
-        await ctx.send(f'<a:nope1:1389178762020520109> {user.mention} already has this badge!')
+        print(f'[DEBUG] After save - badges: {data_manager.badges}')
 
-@bot.command(name='togglenoprefix')
-async def toggle_no_prefix(ctx, user: discord.Member):
-    if ctx.author.id != OWNER_ID:
-        return await ctx.send('<a:nope1:1389178762020520109> Only the bot owner can use this command!')
-    
-    user_id = str(user.id)
-    if user_id in data_manager.no_prefix_users:
-        data_manager.no_prefix_users.remove(user_id)
-        status = 'disabled'
-    else:
-        data_manager.no_prefix_users.add(user_id)
-        status = 'enabled'
-    
-    data_manager.save_data()  # Save changes to file
-    print(f'[DEBUG] Toggled no-prefix mode for user {user_id} ({status})')
-    print(f'[DEBUG] Updated no_prefix_users: {data_manager.no_prefix_users}')
-    await ctx.send(f'<:tick1:1389181551358509077> No-prefix mode {status} for {user.mention}')
+        # Verify data was saved correctly
+        if not data_manager.verify_data_consistency():
+            await ctx.send('⚠️ Warning: Data might not have been saved correctly. Please try again.')
+            return
 
-# Antinuke System
-class AntinukeManager:
-    def __init__(self):
-        self.enabled_guilds = set()
-        self.whitelisted_users = {}
-        self.load_data()
-    
-    def load_data(self):
-        try:
-            with open('antinuke.json', 'r') as f:
-                data = json.load(f)
-                self.enabled_guilds = set(data.get('enabled_guilds', []))
-                self.whitelisted_users = {guild_id: set(users) for guild_id, users in data.get('whitelisted_users', {}).items()}
-        except FileNotFoundError:
-            self.save_data()
-    
-    def save_data(self):
-        with open('antinuke.json', 'w') as f:
-            json_data = {
-                'enabled_guilds': list(self.enabled_guilds),
-                'whitelisted_users': {guild_id: list(users) for guild_id, users in self.whitelisted_users.items()}
-            }
-            json.dump(json_data, f, indent=4)
+        await ctx.send(f'✅ Successfully added {badge} badge to {user.name}!')
 
-antinuke_manager = AntinukeManager()
+    except Exception as e:
+        print(f'[DEBUG] Error in givebadge command: {str(e)}')
+        traceback.print_exc()
+        await ctx.send('❌ An error occurred while processing the command.')
 
-@bot.command(name='whitelist')
-@commands.has_permissions(administrator=True)
-async def whitelist(ctx, action: str, member: Optional[discord.Member] = None):
-    guild_id = str(ctx.guild.id)
-    
-    if action.lower() not in ['add', 'remove', 'list']:
-        embed = discord.Embed(
-            title='<a:nope1:1389178762020520109> Error',
-            description='Invalid action! Use `add`, `remove`, or `list`.',
-            color=discord.Color.red()
-        )
-        return await ctx.send(embed=embed)
-    
-    if action.lower() != 'list' and not member:
-        embed = discord.Embed(
-            title='<a:nope1:1389178762020520109> Error',
-            description='Please specify a member to add/remove from whitelist!',
-            color=discord.Color.red()
-        )
-        return await ctx.send(embed=embed)
-    
-    if guild_id not in antinuke_manager.whitelisted_users:
-        antinuke_manager.whitelisted_users[guild_id] = set()
-    
-    if action.lower() == 'list':
-        whitelisted = antinuke_manager.whitelisted_users[guild_id]
-        if not whitelisted:
-            description = 'No users are whitelisted in this server.'
+@bot.command()
+async def togglenoprefix(ctx, user: discord.Member):
+    try:
+        if str(ctx.author.id) != OWNER_ID:
+            await ctx.send('❌ Only the bot owner can use this command!')
+            return
+
+        user_id = str(user.id)
+        await ctx.send('⏳ Toggling no-prefix status...')
+
+        if user_id in data_manager.no_prefix_users:
+            data_manager.no_prefix_users.remove(user_id)
+            action = 'removed from'
         else:
-            users = ['<@' + user_id + '>' for user_id in whitelisted]
-            description = '**Whitelisted Users:**\n' + '\n'.join(users)
-        
-        embed = discord.Embed(
-            title='✅ Whitelist',
-            description=description,
-            color=discord.Color.blue()
-        )
-        return await ctx.send(embed=embed)
-    
-    member_id = str(member.id)
-    if action.lower() == 'add':
-        antinuke_manager.whitelisted_users[guild_id].add(member_id)
-        status = 'added to'
-    else:
-        antinuke_manager.whitelisted_users[guild_id].discard(member_id)
-        status = 'removed from'
-    
-    antinuke_manager.save_data()
-    embed = discord.Embed(
-        title='✅ Whitelist Updated',
-        description=f'{member.mention} has been {status} the whitelist.',
-        color=discord.Color.green()
-    )
-    await ctx.send(embed=embed)
+            data_manager.no_prefix_users.add(user_id)
+            action = 'added to'
 
-# Ticket System
-class CloseTicketView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-    
-    @discord.ui.button(label='Close Ticket', style=discord.ButtonStyle.danger, emoji='🔒', custom_id='close_ticket')
-    async def close_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
-        guild_id = str(interaction.guild.id)
-        channel_id = str(interaction.channel.id)
-        
-        try:
-            with open(f'tickets/{guild_id}.json', 'r') as f:
-                data = json.load(f)
-                if channel_id in data['tickets']:
-                    ticket_data = data['tickets'][channel_id]
-                    creator_id = ticket_data['creator']
-                    
-                    if interaction.user.guild_permissions.administrator or interaction.user.id == creator_id:
-                        embed = discord.Embed(
-                            title='🔒 Ticket Closed',
-                            description=f'This ticket was closed by {interaction.user.mention}.',
-                            color=discord.Color.red()
-                        )
-                        await interaction.response.send_message(embed=embed)
-                        await asyncio.sleep(5)
-                        await interaction.channel.delete()
-                        
-                        del data['tickets'][channel_id]
-                        with open(f'tickets/{guild_id}.json', 'w') as f:
-                            json.dump(data, f, indent=4)
-                    else:
-                        await interaction.response.send_message('You do not have permission to close this ticket!', ephemeral=True)
-        except FileNotFoundError:
-            await interaction.response.send_message('Error: Ticket data not found!', ephemeral=True)
+        print(f'[DEBUG] Before save - no_prefix_users: {data_manager.no_prefix_users}')
+        data_manager.save_data()
+        print(f'[DEBUG] After save - no_prefix_users: {data_manager.no_prefix_users}')
 
-class TicketView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-    
-    @discord.ui.button(label='Create Ticket', style=discord.ButtonStyle.primary, emoji='🎫', custom_id='create_ticket')
-    async def create_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
-        guild_id = str(interaction.guild.id)
-        if not os.path.exists('tickets'):
-            os.makedirs('tickets')
-        
-        try:
-            with open(f'tickets/{guild_id}.json', 'r') as f:
-                data = json.load(f)
-                ticket_number = data.get('last_ticket', 0) + 1
-        except FileNotFoundError:
-            ticket_number = 1
-            data = {'last_ticket': 0, 'tickets': {}}
-        
-        channel_name = f'ticket-{ticket_number:04d}'
-        overwrites = {
-            interaction.guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            interaction.user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
-            interaction.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True, manage_channels=True)
-        }
-        
-        channel = await interaction.guild.create_text_channel(
-            name=channel_name,
-            category=interaction.channel.category,
-            overwrites=overwrites
-        )
-        
-        embed = discord.Embed(
-            title='<:ticket1:1389284016099950693> Ticket Created',
-            description=f'Welcome {interaction.user.mention}!\nSupport will be with you shortly.\n\nClick the button below to close this ticket when resolved.',
-            color=discord.Color.blue()
-        )
-        close_view = CloseTicketView()
-        await channel.send(embed=embed, view=close_view)
-        
-        data['last_ticket'] = ticket_number
-        data['tickets'][str(channel.id)] = {
-            'creator': interaction.user.id,
-            'created_at': discord.utils.utcnow().isoformat()
-        }
-        
-        with open(f'tickets/{guild_id}.json', 'w') as f:
-            json.dump(data, f, indent=4)
-        
-        await interaction.response.send_message(f'Your ticket has been created: {channel.mention}', ephemeral=True)
+        # Verify data was saved correctly
+        if not data_manager.verify_data_consistency():
+            await ctx.send('⚠️ Warning: Data might not have been saved correctly. Please try again.')
+            return
 
-@bot.command(name='ticket-settings')
-@commands.has_permissions(administrator=True)
-async def ticket_settings(ctx):
-    embed = discord.Embed(
-        title='<a:setting1:1389590399760334868> Ticket Settings',
-        description='Ticket system settings will be available soon!',
-        color=discord.Color.blue()
-    )
-    await ctx.send(embed=embed)
+        await ctx.send(f'✅ Successfully {action} no-prefix list for {user.name}!')
+
+    except Exception as e:
+        print(f'[DEBUG] Error in togglenoprefix command: {str(e)}')
+        traceback.print_exc()
+        await ctx.send('❌ An error occurred while processing the command.')
 
 # Antinuke System
 class AntinukeManager:
