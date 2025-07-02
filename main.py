@@ -38,48 +38,57 @@ class DataManager:
         self.badges = {}
         self.no_prefix_users = set()
         self.data_dir = os.getcwd()
-        print(f'Using data directory: {self.data_dir}')
+        print(f'[DEBUG] Current working directory: {self.data_dir}')
+        print(f'[DEBUG] Directory contents: {os.listdir(self.data_dir)}')
         
         self.data_file = os.path.join(self.data_dir, 'data.json')
-        print(f'Data file path: {self.data_file}')
+        print(f'[DEBUG] Data file path: {self.data_file}')
+        print(f'[DEBUG] Data file exists: {os.path.exists(self.data_file)}')
+        if os.path.exists(self.data_file):
+            print(f'[DEBUG] Data file permissions - Read: {os.access(self.data_file, os.R_OK)}, Write: {os.access(self.data_file, os.W_OK)}')
         self.load_data()
     
     def load_data(self):
         try:
-            print(f'Attempting to load data from {self.data_file}')
+            print(f'[DEBUG] Loading data from {self.data_file}')
             if os.path.exists(self.data_file):
-                print(f'File exists and is readable: {os.access(self.data_file, os.R_OK)}')
-                print(f'File size: {os.path.getsize(self.data_file)} bytes')
+                print(f'[DEBUG] File size before load: {os.path.getsize(self.data_file)} bytes')
                 with open(self.data_file, 'r') as f:
                     data = json.load(f)
-                    self.badges = {user_id: badges for user_id, badges in data.get('badges', {}).items()}
-                    self.no_prefix_users = data.get('no_prefix_users', [])
-                print('Data loaded successfully')
+                    print(f'[DEBUG] Loaded data content: {data}')
+                    self.badges = {user_id: set(badges) for user_id, badges in data.get('badges', {}).items()}
+                    self.no_prefix_users = set(data.get('no_prefix_users', []))
+                print(f'[DEBUG] Loaded badges: {self.badges}')
+                print(f'[DEBUG] Loaded no_prefix_users: {self.no_prefix_users}')
             else:
-                print('No existing data file found, creating new one')
+                print('[DEBUG] No existing data file found, will create new one')
                 self.save_data()
         except Exception as e:
-            print(f'Error loading data: {str(e)}')
-            print(f'Error type: {type(e).__name__}')
+            print(f'[DEBUG] Error loading data: {str(e)}')
+            print(f'[DEBUG] Error type: {type(e).__name__}')
             traceback.print_exc()
     
     def save_data(self):
         try:
-            print(f'Attempting to save data to {self.data_file}')
+            print(f'[DEBUG] Saving data to {self.data_file}')
+            print(f'[DEBUG] Current badges: {self.badges}')
+            print(f'[DEBUG] Current no_prefix_users: {self.no_prefix_users}')
             
             json_data = {
                 'badges': {user_id: list(badges) for user_id, badges in self.badges.items()},
                 'no_prefix_users': list(self.no_prefix_users)
             }
+            print(f'[DEBUG] Data to save: {json_data}')
             
             with open(self.data_file, 'w') as f:
                 json.dump(json_data, f, indent=4)
-            print('Data saved successfully')
-            print(f'File exists after save: {os.path.exists(self.data_file)}')
-            print(f'File size after save: {os.path.getsize(self.data_file)} bytes')
+            print(f'[DEBUG] File exists after save: {os.path.exists(self.data_file)}')
+            print(f'[DEBUG] File size after save: {os.path.getsize(self.data_file)} bytes')
+            with open(self.data_file, 'r') as f:
+                print(f'[DEBUG] Saved content verification: {json.load(f)}')
         except Exception as e:
-            print(f'Error saving data: {str(e)}')
-            print(f'Error type: {type(e).__name__}')
+            print(f'[DEBUG] Error saving data: {str(e)}')
+            print(f'[DEBUG] Error type: {type(e).__name__}')
             traceback.print_exc()
 
 data_manager = DataManager()
@@ -478,6 +487,7 @@ async def profile(ctx, member: Optional[discord.Member] = None):
     await ctx.send(embed=embed)
 
 @bot.command(name='givebadge')
+@bot.command(name='givebadge')
 async def give_badge(ctx, user: discord.Member, badge: str):
     if ctx.author.id != OWNER_ID:
         return await ctx.send('<a:nope1:1389178762020520109> Only the bot owner can use this command!')
@@ -487,29 +497,16 @@ async def give_badge(ctx, user: discord.Member, badge: str):
     
     user_id = str(user.id)
     if user_id not in data_manager.badges:
-        data_manager.badges[user_id] = []
+        data_manager.badges[user_id] = set()
     
     if badge not in data_manager.badges[user_id]:
-        data_manager.badges[user_id].append(badge)
+        data_manager.badges[user_id].add(badge)
         data_manager.save_data()
+        print(f'[DEBUG] Added badge {badge} to user {user_id}')
+        print(f'[DEBUG] Updated badges: {data_manager.badges}')
         await ctx.send(f'<:tick1:1389181551358509077> Added {BADGES[badge]} to {user.mention}')
     else:
         await ctx.send(f'<a:nope1:1389178762020520109> {user.mention} already has this badge!')
-
-@bot.command(name='removebadge')
-async def remove_badge(ctx, user: discord.Member, badge: str):
-    if ctx.author.id != OWNER_ID:
-        return await ctx.send('<a:nope1:1389178762020520109> Only the bot owner can use this command!')
-    
-    user_id = str(user.id)
-    if user_id in data_manager.badges and badge in data_manager.badges[user_id]:
-        data_manager.badges[user_id].remove(badge)
-        if not data_manager.badges[user_id]:  # Remove empty set
-            del data_manager.badges[user_id]
-        data_manager.save_data()
-        await ctx.send(f'<:tick1:1389181551358509077> Removed {BADGES[badge]} from {user.mention}')
-    else:
-        await ctx.send(f'<a:nope1:1389178762020520109> {user.mention} doesn\'t have this badge!')
 
 @bot.command(name='togglenoprefix')
 async def toggle_no_prefix(ctx, user: discord.Member):
