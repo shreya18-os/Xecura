@@ -487,7 +487,6 @@ async def profile(ctx, member: Optional[discord.Member] = None):
     await ctx.send(embed=embed)
 
 @bot.command(name='givebadge')
-@bot.command(name='givebadge')
 async def give_badge(ctx, user: discord.Member, badge: str):
     if ctx.author.id != OWNER_ID:
         return await ctx.send('<a:nope1:1389178762020520109> Only the bot owner can use this command!')
