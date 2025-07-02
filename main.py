@@ -545,16 +545,16 @@ async def profile(ctx, member: Optional[discord.Member] = None):
 @bot.command(name='givebadge')
 async def givebadge(ctx, user: discord.Member, badge: str):
     try:
-        if ctx.author.id != OWNER_ID:  # Compare integers instead of strings
-            await ctx.send('❌ Only the bot owner can use this command!')
+        if ctx.author.id != OWNER_ID:  # Compare integers directly
+            await ctx.send('<a:nope1:1389178762020520109> Only the bot owner can use this command!')
             return
 
-        if badge not in ['owner', 'admin', 'vip', 'bug_hunter']:
-            await ctx.send('❌ Invalid badge type!')
+        if badge not in BADGES.keys():  # Use BADGES dictionary keys
+            await ctx.send('<a:nope1:1389178762020520109> Invalid badge type!')
             return
 
-        user_id = str(user.id)
-        await ctx.send('⏳ Adding badge...')
+        user_id = str(user.id)  # Convert to string for dictionary key
+        await ctx.send('<a:time:1345383309458538518> Adding badge...')
 
         if user_id not in data_manager.badges:
             data_manager.badges[user_id] = set()
@@ -563,28 +563,24 @@ async def givebadge(ctx, user: discord.Member, badge: str):
         print(f'[DEBUG] Before save - badges: {data_manager.badges}')
         data_manager.save_data()
         print(f'[DEBUG] After save - badges: {data_manager.badges}')
-
-        # Verify data was saved correctly
-        if not data_manager.verify_data_consistency():
-            await ctx.send('⚠️ Warning: Data might not have been saved correctly. Please try again.')
-            return
-
-        await ctx.send(f'✅ Successfully added {badge} badge to {user.name}!')
-
+        
+        if data_manager.verify_data_consistency():
+            await ctx.send(f'<:tick1:1389181551358509077> Successfully added {badge} badge to {user.name}!')
+        else:
+            await ctx.send('<a:nope1:1389178762020520109> Failed to save badge data consistently!')
     except Exception as e:
-        print(f'[DEBUG] Error in givebadge command: {str(e)}')
-        traceback.print_exc()
-        await ctx.send('❌ An error occurred while processing the command.')
+        print(f'[DEBUG] Error in givebadge: {str(e)}')
+        await ctx.send(f'<a:nope1:1389178762020520109> An error occurred: {str(e)}')
 
 @bot.command(name='togglenoprefix')
 async def togglenoprefix(ctx, user: discord.Member):
     try:
         if ctx.author.id != OWNER_ID:  # Compare integers instead of strings
-            await ctx.send('❌ Only the bot owner can use this command!')
+            await ctx.send('<a:nope1:1389178762020520109> Only the bot owner can use this command!')
             return
 
         user_id = str(user.id)
-        await ctx.send('⏳ Toggling no-prefix status...')
+        await ctx.send('<a:time:1345383309458538518> Toggling no-prefix status...')
 
         if user_id in data_manager.no_prefix_users:
             data_manager.no_prefix_users.remove(user_id)
