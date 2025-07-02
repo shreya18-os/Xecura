@@ -543,7 +543,6 @@ async def profile(ctx, member: Optional[discord.Member] = None):
     await ctx.send(embed=embed)
 
 @bot.command(name='givebadge')
-@bot.command()
 async def givebadge(ctx, user: discord.Member, badge: str):
     try:
         if str(ctx.author.id) != OWNER_ID:
