@@ -33,104 +33,118 @@ BADGES = {
 # Get data directory from environment variable or use current directory as fallback
 DATA_DIR = os.getenv('XECURA_DATA_DIR', os.getcwd())
 
+import sqlite3
+
 class DataManager:
     def __init__(self):
         self.badges = {}
         self.no_prefix_users = set()
         self.data_dir = os.path.abspath(os.getcwd())
-        print(f'[DEBUG] Absolute working directory: {self.data_dir}')
-        print(f'[DEBUG] Directory contents: {os.listdir(self.data_dir)}')
-        
-        self.data_file = os.path.abspath(os.path.join(self.data_dir, 'data.json'))
-        print(f'[DEBUG] Absolute data file path: {self.data_file}')
-        print(f'[DEBUG] Data file exists: {os.path.exists(self.data_file)}')
-        if os.path.exists(self.data_file):
-            print(f'[DEBUG] Data file permissions - Read: {os.access(self.data_file, os.R_OK)}, Write: {os.access(self.data_file, os.W_OK)}')
+        self.db_file = os.path.abspath(os.path.join(self.data_dir, 'data.db'))
+        self.init_database()
         self.load_data()
-    
-    def verify_data_consistency(self):
-        try:
-            with open(self.data_file, 'r') as f:
-                saved_data = json.load(f)
-                saved_badges = {user_id: set(badges) for user_id, badges in saved_data.get('badges', {}).items()}
-                saved_no_prefix = set(saved_data.get('no_prefix_users', []))
-                
-                if saved_badges != self.badges or saved_no_prefix != self.no_prefix_users:
-                    print('[DEBUG] Data inconsistency detected!')
-                    print(f'[DEBUG] Memory badges: {self.badges}')
-                    print(f'[DEBUG] Saved badges: {saved_badges}')
-                    print(f'[DEBUG] Memory no_prefix: {self.no_prefix_users}')
-                    print(f'[DEBUG] Saved no_prefix: {saved_no_prefix}')
-                    return False
-                return True
-        except Exception as e:
-            print(f'[DEBUG] Error verifying data consistency: {str(e)}')
-            return False
-    
+
+    def init_database(self):
+        with sqlite3.connect(self.db_file) as conn:
+            cursor = conn.cursor()
+            # Create tables if they don't exist
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS badges (
+                    user_id TEXT,
+                    badge TEXT,
+                    PRIMARY KEY (user_id, badge)
+                )
+            ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS no_prefix_users (
+                    user_id TEXT PRIMARY KEY
+                )
+            ''')
+            conn.commit()
+
+    def verify_data_consistency(self) -> bool:
+        with sqlite3.connect(self.db_file) as conn:
+            cursor = conn.cursor()
+            # Get badges from database
+            cursor.execute('SELECT user_id, badge FROM badges')
+            db_badges = {}
+            for user_id, badge in cursor.fetchall():
+                if user_id not in db_badges:
+                    db_badges[user_id] = set()
+                db_badges[user_id].add(badge)
+
+            # Get no_prefix users from database
+            cursor.execute('SELECT user_id FROM no_prefix_users')
+            db_no_prefix = set(row[0] for row in cursor.fetchall())
+
+            return db_badges == self.badges and db_no_prefix == self.no_prefix_users
+
     def save_data(self):
         try:
-            print(f'[DEBUG] Saving data to {self.data_file}')
+            print('[DEBUG] Saving data to SQLite database')
             print(f'[DEBUG] Current badges: {self.badges}')
             print(f'[DEBUG] Current no_prefix_users: {self.no_prefix_users}')
-            
-            json_data = {
-                'badges': {user_id: list(badges) for user_id, badges in self.badges.items()},
-                'no_prefix_users': list(self.no_prefix_users)
-            }
-            print(f'[DEBUG] Data to save: {json_data}')
-            
-            # Ensure directory exists
-            os.makedirs(os.path.dirname(self.data_file), exist_ok=True)
-            
-            # Write to a temporary file first
-            temp_file = f'{self.data_file}.tmp'
-            with open(temp_file, 'w') as f:
-                json.dump(json_data, f, indent=4)
-            
-            # Verify the temporary file was written correctly
-            if os.path.exists(temp_file) and os.path.getsize(temp_file) > 0:
-                # Rename temporary file to actual file (atomic operation)
-                os.replace(temp_file, self.data_file)
-                print(f'[DEBUG] File saved successfully')
-                print(f'[DEBUG] File size after save: {os.path.getsize(self.data_file)} bytes')
-                
-                # Verify data consistency
-                if not self.verify_data_consistency():
-                    raise Exception('Data consistency check failed after save')
-                print('[DEBUG] Data consistency verified')
-            else:
-                print(f'[DEBUG] Error: Temporary file not written correctly')
-                if os.path.exists(temp_file):
-                    os.remove(temp_file)
-                raise Exception('Failed to write temporary file')
-                
+
+            with sqlite3.connect(self.db_file) as conn:
+                cursor = conn.cursor()
+                # Begin transaction
+                cursor.execute('BEGIN TRANSACTION')
+                try:
+                    # Clear existing data
+                    cursor.execute('DELETE FROM badges')
+                    cursor.execute('DELETE FROM no_prefix_users')
+
+                    # Insert badges
+                    for user_id, badges in self.badges.items():
+                        for badge in badges:
+                            cursor.execute('INSERT INTO badges (user_id, badge) VALUES (?, ?)', (user_id, badge))
+
+                    # Insert no_prefix users
+                    for user_id in self.no_prefix_users:
+                        cursor.execute('INSERT INTO no_prefix_users (user_id) VALUES (?)', (user_id,))
+
+                    # Commit transaction
+                    conn.commit()
+                    print('[DEBUG] Data saved successfully')
+                except Exception as e:
+                    # Rollback on error
+                    conn.rollback()
+                    raise e
+
+            if not self.verify_data_consistency():
+                print('[DEBUG] Data consistency check failed after save!')
+                raise Exception('Data consistency verification failed')
+
         except Exception as e:
             print(f'[DEBUG] Error saving data: {str(e)}')
-            print(f'[DEBUG] Error type: {type(e).__name__}')
             traceback.print_exc()
-            if 'temp_file' in locals() and os.path.exists(temp_file):
-                os.remove(temp_file)
             raise
-    
+
     def load_data(self):
         try:
-            print(f'[DEBUG] Loading data from {self.data_file}')
-            if os.path.exists(self.data_file):
-                print(f'[DEBUG] File size before load: {os.path.getsize(self.data_file)} bytes')
-                with open(self.data_file, 'r') as f:
-                    data = json.load(f)
-                    print(f'[DEBUG] Loaded data content: {data}')
-                    self.badges = {user_id: set(badges) for user_id, badges in data.get('badges', {}).items()}
-                    self.no_prefix_users = set(data.get('no_prefix_users', []))
-                print(f'[DEBUG] Loaded badges: {self.badges}')
-                print(f'[DEBUG] Loaded no_prefix_users: {self.no_prefix_users}')
-            else:
-                print('[DEBUG] No existing data file found, creating new one')
-                self.save_data()
+            print(f'[DEBUG] Loading data from SQLite database')
+            with sqlite3.connect(self.db_file) as conn:
+                cursor = conn.cursor()
+                # Load badges
+                cursor.execute('SELECT user_id, badge FROM badges')
+                for user_id, badge in cursor.fetchall():
+                    if user_id not in self.badges:
+                        self.badges[user_id] = set()
+                    self.badges[user_id].add(badge)
+
+                # Load no_prefix users
+                cursor.execute('SELECT user_id FROM no_prefix_users')
+                self.no_prefix_users = set(row[0] for row in cursor.fetchall())
+
+            print(f'[DEBUG] Loaded badges: {self.badges}')
+            print(f'[DEBUG] Loaded no_prefix_users: {self.no_prefix_users}')
+
         except Exception as e:
             print(f'[DEBUG] Error loading data: {str(e)}')
-            print(f'[DEBUG] Error type: {type(e).__name__}')
             traceback.print_exc()
+            # Initialize empty data structures on error
+            self.badges = {}
+            self.no_prefix_users = set()
 
 data_manager = DataManager()
 
@@ -598,7 +612,7 @@ async def togglenoprefix(ctx, user: discord.Member):
             await ctx.send('⚠️ Warning: Data might not have been saved correctly. Please try again.')
             return
 
-        await ctx.send(f'<:tick1:1389181551358509077> Successfully {action} no-prefix list for {user.name}!')
+        await ctx.send(f'✅ Successfully {action} no-prefix list for {user.name}!')
 
     except Exception as e:
         print(f'[DEBUG] Error in togglenoprefix command: {str(e)}')
