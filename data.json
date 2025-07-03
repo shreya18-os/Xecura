@@ -1,7 +1,0 @@
-{
-    "badges": {
-        "1234567890": ["owner", "admin"],
-        "9876543210": ["vip", "bug_hunter"]
-    },
-    "no_prefix_users": ["1234567890"]
-}
