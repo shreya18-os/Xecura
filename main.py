@@ -117,6 +117,34 @@ class DataManager:
 
             return db_badges == self.badges and db_no_prefix == self.no_prefix_users
 
+    def load_data(self):
+        try:
+            print('[DEBUG] Loading data from SQLite database')
+            with sqlite3.connect(self.db_file) as conn:
+                cursor = conn.cursor()
+                
+                # Load badges
+                cursor.execute('SELECT user_id, badge FROM badges')
+                for user_id, badge in cursor.fetchall():
+                    if user_id not in self.badges:
+                        self.badges[user_id] = set()
+                    self.badges[user_id].add(badge)
+                
+                # Load no-prefix users
+                cursor.execute('SELECT user_id FROM no_prefix_users')
+                self.no_prefix_users = set(row[0] for row in cursor.fetchall())
+                
+                print(f'[DEBUG] Loaded badges: {self.badges}')
+                print(f'[DEBUG] Loaded no_prefix_users: {self.no_prefix_users}')
+                
+        except sqlite3.Error as e:
+            print(f'[DEBUG] Error loading data from database: {str(e)}')
+            # Initialize empty data structures on error
+            self.badges = {}
+            self.no_prefix_users = set()
+            # Ensure database is properly initialized
+            self.init_database()
+
     def save_data(self):
         try:
             print('[DEBUG] Saving data to SQLite database')
@@ -157,18 +185,6 @@ class DataManager:
             print(f'[DEBUG] Error saving data: {str(e)}')
             traceback.print_exc()
             raise
-        except sqlite3.Error as e:
-            print(f'[DEBUG] SQLite error while loading data: {str(e)}')
-            traceback.print_exc()
-            # Initialize empty data structures on error
-            self.badges = {}
-            self.no_prefix_users = set()
-        except Exception as e:
-            print(f'[DEBUG] Unexpected error while loading data: {str(e)}')
-            traceback.print_exc()
-            # Initialize empty data structures on error
-            self.badges = {}
-            self.no_prefix_users = set()
 
 data_manager = DataManager()
 
