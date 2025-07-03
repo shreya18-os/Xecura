@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  bot:
+    user: "1000:1000"  # Use a non-root user
+    volumes:
+      - type: bind
+        source: ./data
+        target: /app/data
+        bind:
+          create_host_path: true  # Create host directory if it doesn't exist
+    environment:
+      - DATA_DIR=/app/data  # Explicitly set data directory
+      - PYTHONUNBUFFERED=1  # Ensure Python output is not buffered
