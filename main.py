@@ -612,7 +612,7 @@ async def togglenoprefix(ctx, user: discord.Member):
             await ctx.send('⚠️ Warning: Data might not have been saved correctly. Please try again.')
             return
 
-        await ctx.send(f'✅ Successfully {action} no-prefix list for {user.name}!')
+        await ctx.send(f'<:ticket1:1389284016099950693> Successfully {action} no-prefix list for {user.name}!')
 
     except Exception as e:
         print(f'[DEBUG] Error in togglenoprefix command: {str(e)}')
