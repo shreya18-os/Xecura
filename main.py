@@ -40,8 +40,24 @@ class DataManager:
     def __init__(self):
         self.badges = {}
         self.no_prefix_users = set()
-        self.data_dir = os.path.abspath(os.getcwd())
-        self.db_file = os.path.abspath(os.path.join(self.data_dir, 'data.db'))
+        
+        # Use environment variable for data directory in container
+        self.data_dir = os.getenv('DATA_DIR', os.path.abspath(os.path.join(os.getcwd(), 'data')))
+        print(f'[DEBUG] Using data directory: {self.data_dir}')
+        
+        # Ensure data directory exists with proper permissions
+        try:
+            os.makedirs(self.data_dir, mode=0o777, exist_ok=True)
+            print(f'[DEBUG] Created/verified data directory at {self.data_dir}')
+        except Exception as e:
+            print(f'[DEBUG] Error creating data directory: {str(e)}')
+            # Fallback to current directory if data dir creation fails
+            self.data_dir = os.getcwd()
+            print(f'[DEBUG] Falling back to current directory: {self.data_dir}')
+        
+        self.db_file = os.path.join(self.data_dir, 'data.db')
+        print(f'[DEBUG] Database file path: {self.db_file}')
+        
         self.init_database()
         self.load_data()
 
@@ -107,6 +123,9 @@ class DataManager:
             print(f'[DEBUG] Current badges: {self.badges}')
             print(f'[DEBUG] Current no_prefix_users: {self.no_prefix_users}')
 
+            # Ensure data directory exists
+            os.makedirs(self.data_dir, exist_ok=True)
+
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
                 try:
@@ -132,30 +151,12 @@ class DataManager:
                 except Exception as e:
                     # Rollback on error
                     conn.rollback()
-                    print(f'[DEBUG] Error saving data: {str(e)}')
+                    print(f'[DEBUG] Error during save transaction: {str(e)}')
                     raise
         except Exception as e:
-            print(f'[DEBUG] Database error: {str(e)}')
+            print(f'[DEBUG] Error saving data: {str(e)}')
             traceback.print_exc()
-
-    def load_data(self):
-        try:
-            print(f'[DEBUG] Loading data from SQLite database')
-            with sqlite3.connect(self.db_file) as conn:
-                cursor = conn.cursor()
-                # Load badges
-                cursor.execute('SELECT user_id, badge FROM badges')
-                for user_id, badge in cursor.fetchall():
-                    if user_id not in self.badges:
-                        self.badges[user_id] = set()
-                    self.badges[user_id].add(badge)
-
-                # Load no_prefix users
-                cursor.execute('SELECT user_id FROM no_prefix_users')
-                self.no_prefix_users = set(row[0] for row in cursor.fetchall())
-
-            print(f'[DEBUG] Loaded badges: {self.badges}')
-            print(f'[DEBUG] Loaded no_prefix_users: {self.no_prefix_users}')
+            raise
         except sqlite3.Error as e:
             print(f'[DEBUG] SQLite error while loading data: {str(e)}')
             traceback.print_exc()
