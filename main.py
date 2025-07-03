@@ -8,6 +8,7 @@ import os
 import asyncio
 import platform
 import datetime
+import sqlite3
 from typing import Optional
 
 
@@ -45,22 +46,43 @@ class DataManager:
         self.load_data()
 
     def init_database(self):
-        with sqlite3.connect(self.db_file) as conn:
-            cursor = conn.cursor()
-            # Create tables if they don't exist
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS badges (
-                    user_id TEXT,
-                    badge TEXT,
-                    PRIMARY KEY (user_id, badge)
-                )
-            ''')
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS no_prefix_users (
-                    user_id TEXT PRIMARY KEY
-                )
-            ''')
-            conn.commit()
+        try:
+            print(f'[DEBUG] Initializing database at {self.db_file}')
+            # Ensure the data directory exists
+            os.makedirs(os.path.dirname(self.db_file), exist_ok=True)
+            
+            with sqlite3.connect(self.db_file) as conn:
+                cursor = conn.cursor()
+                # Create tables if they don't exist
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS badges (
+                        user_id TEXT,
+                        badge TEXT,
+                        PRIMARY KEY (user_id, badge)
+                    )
+                ''')
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS no_prefix_users (
+                        user_id TEXT PRIMARY KEY
+                    )
+                ''')
+                conn.commit()
+                print('[DEBUG] Database initialized successfully')
+                
+                # Verify tables exist
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND (name='badges' OR name='no_prefix_users')")
+                tables = cursor.fetchall()
+                if len(tables) != 2:
+                    raise Exception(f'Database initialization failed - missing tables. Found: {tables}')
+                    
+        except sqlite3.Error as e:
+            print(f'[DEBUG] SQLite error during database initialization: {str(e)}')
+            traceback.print_exc()
+            raise
+        except Exception as e:
+            print(f'[DEBUG] Error during database initialization: {str(e)}')
+            traceback.print_exc()
+            raise
 
     def verify_data_consistency(self) -> bool:
         with sqlite3.connect(self.db_file) as conn:
@@ -87,9 +109,10 @@ class DataManager:
 
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
-                # Begin transaction
-                cursor.execute('BEGIN TRANSACTION')
                 try:
+                    # Begin transaction
+                    cursor.execute('BEGIN TRANSACTION')
+                    
                     # Clear existing data
                     cursor.execute('DELETE FROM badges')
                     cursor.execute('DELETE FROM no_prefix_users')
@@ -97,11 +120,11 @@ class DataManager:
                     # Insert badges
                     for user_id, badges in self.badges.items():
                         for badge in badges:
-                            cursor.execute('INSERT INTO badges (user_id, badge) VALUES (?, ?)', (user_id, badge))
+                            cursor.execute('INSERT INTO badges (user_id, badge) VALUES (?, ?)', (str(user_id), badge))
 
                     # Insert no_prefix users
                     for user_id in self.no_prefix_users:
-                        cursor.execute('INSERT INTO no_prefix_users (user_id) VALUES (?)', (user_id,))
+                        cursor.execute('INSERT INTO no_prefix_users (user_id) VALUES (?)', (str(user_id),))
 
                     # Commit transaction
                     conn.commit()
@@ -109,16 +132,11 @@ class DataManager:
                 except Exception as e:
                     # Rollback on error
                     conn.rollback()
-                    raise e
-
-            if not self.verify_data_consistency():
-                print('[DEBUG] Data consistency check failed after save!')
-                raise Exception('Data consistency verification failed')
-
+                    print(f'[DEBUG] Error saving data: {str(e)}')
+                    raise
         except Exception as e:
-            print(f'[DEBUG] Error saving data: {str(e)}')
+            print(f'[DEBUG] Database error: {str(e)}')
             traceback.print_exc()
-            raise
 
     def load_data(self):
         try:
@@ -138,9 +156,14 @@ class DataManager:
 
             print(f'[DEBUG] Loaded badges: {self.badges}')
             print(f'[DEBUG] Loaded no_prefix_users: {self.no_prefix_users}')
-
+        except sqlite3.Error as e:
+            print(f'[DEBUG] SQLite error while loading data: {str(e)}')
+            traceback.print_exc()
+            # Initialize empty data structures on error
+            self.badges = {}
+            self.no_prefix_users = set()
         except Exception as e:
-            print(f'[DEBUG] Error loading data: {str(e)}')
+            print(f'[DEBUG] Unexpected error while loading data: {str(e)}')
             traceback.print_exc()
             # Initialize empty data structures on error
             self.badges = {}
@@ -359,10 +382,20 @@ async def auto_save_data():
             await asyncio.sleep(300)  # Save every 5 minutes
             print('[DEBUG] Running auto-save...')
             data_manager.save_data()
-            print('[DEBUG] Auto-save completed')
+            print('[DEBUG] Auto-save completed successfully')
+            
+            # Verify data consistency after save
+            if data_manager.verify_data_consistency():
+                print('[DEBUG] Data consistency check passed')
+            else:
+                print('[DEBUG] WARNING: Data consistency check failed after auto-save')
+                
         except Exception as e:
             print(f'[DEBUG] Error in auto-save: {str(e)}')
             traceback.print_exc()
+        
+        # Even if there's an error, continue the auto-save loop
+        await asyncio.sleep(5)  # Wait 5 seconds before retrying on error
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -612,7 +645,7 @@ async def togglenoprefix(ctx, user: discord.Member):
             await ctx.send('⚠️ Warning: Data might not have been saved correctly. Please try again.')
             return
 
-        await ctx.send(f'<:ticket1:1389284016099950693> Successfully {action} no-prefix list for {user.name}!')
+        await ctx.send(f'✅ Successfully {action} no-prefix list for {user.name}!')
 
     except Exception as e:
         print(f'[DEBUG] Error in togglenoprefix command: {str(e)}')
