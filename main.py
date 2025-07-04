@@ -847,25 +847,27 @@ async def on_message(message):
     has_no_prefix = str(message.author.id) in data_manager.no_prefix_users
 
     # Process commands with or without prefix based on user's status
-if has_no_prefix:
-    ctx = await bot.get_context(message)
-    if ctx.command is None:
-        # Try to find the command without prefix
-        command_name = message.content.split()[0].lower()
-        command = bot.get_command(command_name)
-        if command:
-            message.content = f"{DEFAULT_PREFIX}{message.content}"
-            await bot.process_commands(message)
-            return
+    if has_no_prefix:
+        ctx = await bot.get_context(message)
+        if ctx.command is None:
+            # Try to find the command without prefix
+            command_name = message.content.split()[0].lower()
+            command = bot.get_command(command_name)
+            if command:
+                message.content = f"{DEFAULT_PREFIX}{message.content}"
+                await bot.process_commands(message)
+                return
 
-    await bot.process_commands(message)
-    await ctx.send(embed=embed)  # Safe: ctx is defined
+        await bot.process_commands(message)
+        # Optional: only send embed for no-prefix users
+        # await ctx.send(embed=embed)
 
-else:
-    await bot.process_commands(message)
-    # Optional: If you want to send the embed here too
-    # ctx = await bot.get_context(message)
-    # await ctx.send(embed=embed)
+    else:
+        await bot.process_commands(message)
+        # Optional: uncomment if you want to send embed for others too
+        # ctx = await bot.get_context(message)
+        # await ctx.send(embed=embed)
+
 
 
     try:
