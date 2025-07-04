@@ -777,21 +777,6 @@ async def nickname(ctx, member: discord.Member, *, new_nick=None):
     except discord.Forbidden:
         await ctx.send('<a:nope1:1389178762020520109> I cannot change that member\'s nickname!')
 
-@bot.command(name='mute')
-@commands.has_permissions(moderate_members=True)
-async def mute(ctx, member: discord.Member, duration: int, *, reason=None):
-    if member.top_role >= ctx.author.top_role:
-        return await ctx.send('<a:nope1:1389178762020520109> You cannot mute someone with higher or equal role!')
-    try:
-        await member.timeout(discord.utils.utcnow() + datetime.timedelta(minutes=duration), reason=reason)
-        embed = discord.Embed(
-            title='<:tick1:1389181551358509077> Member Muted',
-            description=f'{member.mention} has been muted <:mute1:1389605413132963951> for {duration} minutes\nReason: {reason or "No reason provided"}',
-            color=discord.Color.orange()
-        )
-        await ctx.send(embed=embed)
-    except discord.Forbidden:
-        await ctx.send('<a:nope1:1389178762020520109> I cannot mute that member!')
 
 @bot.command(name='unmute')
 @commands.has_permissions(moderate_members=True)
@@ -1023,42 +1008,8 @@ class TicketView(View):
 # Update help menu with new categories
 # Help menu implementation moved to the top of the file
 
-@bot.command(name='ping')
-async def ping(ctx):
-    embed = discord.Embed(
-        title='<a:ping:1345381376433717269> Pong!',
-        description=f'Latency: {round(bot.latency * 1000)}ms',
-        color=discord.Color.green()
-    )
-    await ctx.send(embed=embed)
 
 
-@bot.command(name='ban')
-@commands.has_permissions(ban_members=True)
-async def ban(ctx, member: discord.Member, *, reason=None):
-    if member.top_role >= ctx.author.top_role and ctx.author.id != OWNER_ID:
-        embed = discord.Embed(
-            title='<a:nope1:1389178762020520109> Error',
-            description='You cannot ban someone with a higher or equal role!',
-            color=discord.Color.red()
-        )
-        return await ctx.send(embed=embed)
-    
-    try:
-        await member.ban(reason=reason)
-        embed = discord.Embed(
-            title='<:tick1:1389181551358509077> Member Banned',
-            description=f'{member.mention} has been banned\nReason: {reason or "No reason provided"}',
-            color=discord.Color.red()
-        )
-        await ctx.send(embed=embed)
-    except discord.Forbidden:
-        embed = discord.Embed(
-            title='<a:nope1:1389178762020520109> Error',
-            description='I do not have permission to ban this member!',
-            color=discord.Color.red()
-        )
-        await ctx.send(embed=embed)
 
 # New General Commands
 @bot.command(name='avatar')
@@ -1095,32 +1046,8 @@ async def members(ctx):
     await ctx.send(embed=embed)
 
 # New Moderation Commands
-@bot.command(name='slowmode')
-@commands.has_permissions(manage_channels=True)
-async def slowmode(ctx, seconds: int):
-    if seconds < 0 or seconds > 21600:
-        return await ctx.send('<a:nope1:1389178762020520109> Slowmode must be between 0 and 21600 seconds!')
-    await ctx.channel.edit(slowmode_delay=seconds)
-    embed = discord.Embed(
-        title='<:tick1:1389181551358509077> Slowmode Updated',
-        description=f'<:slowmode1:1389604723610619984>Set slowmode to {seconds} seconds',
-        color=discord.Color.green()
-    )
-    await ctx.send(embed=embed)
 
-@bot.command(name='nickname')
-@commands.has_permissions(manage_nicknames=True)
-async def nickname(ctx, member: discord.Member, *, new_nick=None):
-    try:
-        await member.edit(nick=new_nick)
-        embed = discord.Embed(
-            title='<:tick1:1389181551358509077> Nickname Updated',
-            description=f'Changed {member.mention}\'s nickname to: {new_nick or "Reset to default"}',
-            color=discord.Color.green()
-        )
-        await ctx.send(embed=embed)
-    except discord.Forbidden:
-        await ctx.send('<a:nope1:1389178762020520109> I cannot change that member\'s nickname!')
+
 
 @bot.command(name='mute')
 @commands.has_permissions(moderate_members=True)
@@ -1138,63 +1065,10 @@ async def mute(ctx, member: discord.Member, duration: int, *, reason=None):
     except discord.Forbidden:
         await ctx.send('<a:nope1:1389178762020520109> I cannot mute that member!')
 
-@bot.command(name='unmute')
-@commands.has_permissions(moderate_members=True)
-async def unmute(ctx, member: discord.Member):
-    try:
-        await member.timeout(None)
-        embed = discord.Embed(
-            title='<:tick1:1389181551358509077> Member Unmuted',
-            description=f'{member.mention} has been unmuted',
-            color=discord.Color.green()
-        )
-        await ctx.send(embed=embed)
-    except discord.Forbidden:
-        await ctx.send('<a:nope1:1389178762020520109> I cannot unmute that member!')
 
 # New Utility Commands
-@bot.command(name='role')
-@commands.has_permissions(manage_roles=True)
-async def role(ctx, member: discord.Member, *, role: discord.Role):
-    if role >= ctx.author.top_role:
-        return await ctx.send('<a:nope1:1389178762020520109> You cannot manage a role higher than your own!')
-    if role in member.roles:
-        await member.remove_roles(role)
-        action = 'removed from'
-    else:
-        await member.add_roles(role)
-        action = 'added to'
-    embed = discord.Embed(
-        title='<:tick1:1389181551358509077> Role Updated',
-        description=f'Role {role.mention} has been {action} {member.mention}',
-        color=discord.Color.green()
-    )
-    await ctx.send(embed=embed)
 
-@bot.command(name='createchannel')
-@commands.has_permissions(manage_channels=True)
-async def createchannel(ctx, channel_name, channel_type='text'):
-    if channel_type.lower() not in ['text', 'voice']:
-        return await ctx.send('<a:nope1:1389178762020520109> Invalid channel type! Use \'text\' or \'voice\'')
-    channel_type_obj = discord.ChannelType.text if channel_type.lower() == 'text' else discord.ChannelType.voice
-    channel = await ctx.guild.create_channel(name=channel_name, type=channel_type_obj)
-    embed = discord.Embed(
-        title='<:tick1:1389181551358509077> Channel Created',
-        description=f'Created new {channel_type} channel: {channel.mention}',
-        color=discord.Color.green()
-    )
-    await ctx.send(embed=embed)
 
-@bot.command(name='deletechannel')
-@commands.has_permissions(manage_channels=True)
-async def deletechannel(ctx, channel: discord.TextChannel):
-    await channel.delete()
-    embed = discord.Embed(
-        title='<:tick1:1389181551358509077> Channel Deleted',
-        description=f'Channel {channel.name} has been deleted',
-        color=discord.Color.red()
-    )
-    await ctx.send(embed=embed)
 
 @bot.command(name='invites')
 @commands.has_permissions(manage_guild=True)
