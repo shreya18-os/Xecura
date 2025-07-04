@@ -124,6 +124,111 @@ class DataManager:
                 print(f'[ERROR] Auto-save failed: {str(e)}')
                 traceback.print_exc()
 
+    def init_database(self):
+        with sqlite3.connect(self.db_file) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS badges (
+                    user_id TEXT PRIMARY KEY,
+                    badges TEXT
+                )
+            ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS no_prefix_users (
+                    user_id TEXT PRIMARY KEY
+                )
+            ''')
+            conn.commit()
+
+    def load_data(self):
+        with sqlite3.connect(self.db_file) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT user_id, badges FROM badges')
+            for user_id, badges_str in cursor.fetchall():
+                self.badges[user_id] = set(badges_str.split(','))
+            
+            cursor.execute('SELECT user_id FROM no_prefix_users')
+            self.no_prefix_users = set(row[0] for row in cursor.fetchall())
+
+    def save_data(self):
+        with sqlite3.connect(self.db_file) as conn:
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM badges')
+            cursor.execute('DELETE FROM no_prefix_users')
+            
+            for user_id, badges in self.badges.items():
+                cursor.execute('INSERT INTO badges VALUES (?, ?)', (user_id, ','.join(badges)))
+            
+            for user_id in self.no_prefix_users:
+                cursor.execute('INSERT INTO no_prefix_users VALUES (?)', (user_id,))
+            
+            conn.commit()
+
+    def verify_data_consistency(self) -> bool:
+        try:
+            with sqlite3.connect(self.db_file) as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT COUNT(*) FROM badges')
+                db_badge_count = cursor.fetchone()[0]
+                cursor.execute('SELECT COUNT(*) FROM no_prefix_users')
+                db_noprefix_count = cursor.fetchone()[0]
+                
+                if db_badge_count != len(self.badges) or db_noprefix_count != len(self.no_prefix_users):
+                    print(f'[DEBUG] Data consistency mismatch:\nBadges: DB={db_badge_count}, Memory={len(self.badges)}\nNo-prefix: DB={db_noprefix_count}, Memory={len(self.no_prefix_users)}')
+                    return False
+                return True
+        except Exception as e:
+            print(f'[DEBUG] Data consistency check failed: {str(e)}')
+            return False
+
+# Initialize the data manager instance
+data_manager = DataManager()
+
+@bot.event
+async def on_ready():
+    print(f'{bot.user} is ready!')
+    await bot.change_presence(activity=discord.Game(name=f"Xecura | x!help"))
+    await data_manager.start_auto_save()
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description='You do not have permission to use this command!',
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+    elif isinstance(error, commands.MissingRequiredArgument):
+        embed = discord.Embed(
+            title='<a:nope1:1389178762020520109> Error',
+            description=f'Missing required argument: {error.param.name}',
+            color=discord.Color.red()
+        )
+        await ctx.send(embed=embed)
+    elif isinstance(error, commands.CommandNotFound):
+        if str(ctx.author.id) not in data_manager.no_prefix_users:
+            embed = discord.Embed(
+                title='<a:nope1:1389178762020520109> Error',
+                description='Command not found!',
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+    else:
+        traceback.print_exception(type(error), error, error.__traceback__)
+
+class HelpDropdown(discord.ui.Select):
+    def __init__(self):
+        options = [
+            discord.SelectOption(label='General', description='General utility commands', emoji='<:help:1345381592335646750>'),
+            discord.SelectOption(label='Profile', description='Profile and badge commands', emoji='<:profile1:1389287397761745039>'),
+            discord.SelectOption(label='Moderation', description='Server moderation commands', emoji='<:kick:1345360371002900550>'),
+            discord.SelectOption(label='Utility', description='Additional utility commands', emoji='<:role1:1389607749985370255>'),
+            discord.SelectOption(label='Antinuke', description='Server protection commands', emoji='<:antinuke1:1389284381247410287>'),
+            discord.SelectOption(label='Tickets', description='Ticket system commands', emoji='<:ticket1:1389284016099950693>'),
+            discord.SelectOption(label='Admin', description='Owner-only commands', emoji='<:badge1:1389589621872136293>')
+        ]
+        super().__init__(placeholder='Select a category...', min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: Interaction):
         try:
@@ -264,64 +369,6 @@ async def userinfo(ctx, member: Optional[discord.Member] = None):
     await ctx.send(embed=embed)
 
 
-@bot.event
-# Add auto-save task after bot ready event
-@bot.event
-async def on_ready():
-    print(f'{bot.user} is ready!')
-    await bot.change_presence(activity=discord.Game(name=f"Xecura | x!help"))
-    bot.loop.create_task(auto_save_data())
-
-# Auto-save task
-async def auto_save_data():
-    while True:
-        try:
-            await asyncio.sleep(300)  # Save every 5 minutes
-            print('[DEBUG] Running auto-save...')
-            data_manager.save_data()
-            print('[DEBUG] Auto-save completed successfully')
-            
-            # Verify data consistency after save
-            if data_manager.verify_data_consistency():
-                print('[DEBUG] Data consistency check passed')
-            else:
-                print('[DEBUG] WARNING: Data consistency check failed after auto-save')
-                
-        except Exception as e:
-            print(f'[DEBUG] Error in auto-save: {str(e)}')
-            traceback.print_exc()
-        
-        # Even if there's an error, continue the auto-save loop
-        await asyncio.sleep(5)  # Wait 5 seconds before retrying on error
-
-@bot.event
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.MissingPermissions):
-        embed = discord.Embed(
-            title='<a:nope1:1389178762020520109> Error',
-            description='You do not have permission to use this command!',
-            color=discord.Color.red()
-        )
-        await ctx.send(embed=embed)
-    elif isinstance(error, commands.MissingRequiredArgument):
-        embed = discord.Embed(
-            title='<a:nope1:1389178762020520109> Error',
-            description=f'Missing required argument: {error.param.name}',
-            color=discord.Color.red()
-        )
-        await ctx.send(embed=embed)
-    elif isinstance(error, commands.CommandNotFound):
-        if str(ctx.author.id) not in data_manager.no_prefix_users:
-            embed = discord.Embed(
-                title='<a:nope1:1389178762020520109> Error',
-                description='Command not found!',
-                color=discord.Color.red()
-            )
-            await ctx.send(embed=embed)
-    else:
-        traceback.print_exception(type(error), error, error.__traceback__)
-
-# Moderation Commands
 @bot.command(name='kick')
 @commands.has_permissions(kick_members=True)
 async def kick(ctx, member: discord.Member, *, reason=None):
