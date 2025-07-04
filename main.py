@@ -38,30 +38,21 @@ class DataManager:
     def verify_database_access(self) -> bool:
         try:
             print(f'[DEBUG] Verifying database access at {self.db_file}')
-            
-            # Check if directory exists and is writable
             if not os.path.exists(self.data_dir):
                 print(f'[ERROR] Data directory does not exist: {self.data_dir}')
                 return False
-            
             if not os.access(self.data_dir, os.W_OK):
                 print(f'[ERROR] Data directory is not writable: {self.data_dir}')
                 return False
-            
-            # Try to create/open database file
             with sqlite3.connect(self.db_file) as conn:
                 cursor = conn.cursor()
                 cursor.execute('SELECT 1')
                 cursor.fetchone()
-            
-            # Verify file permissions after creation
             if not os.access(self.db_file, os.W_OK):
                 print(f'[ERROR] Database file is not writable: {self.db_file}')
                 return False
-            
             print('[DEBUG] Database access verified successfully')
             return True
-            
         except Exception as e:
             print(f'[ERROR] Database access verification failed: {str(e)}')
             traceback.print_exc()
@@ -70,31 +61,21 @@ class DataManager:
     def __init__(self):
         self.badges = {}
         self.no_prefix_users = set()
-        
-        # Use environment variable for data directory in container
         self.data_dir = os.getenv('DATA_DIR', os.path.abspath(os.path.join(os.getcwd(), 'data')))
         print(f'[DEBUG] Using data directory: {self.data_dir}')
-        
-        # Ensure data directory exists with proper permissions
         try:
             os.makedirs(self.data_dir, mode=0o777, exist_ok=True)
             print(f'[DEBUG] Created/verified data directory at {self.data_dir}')
         except Exception as e:
             print(f'[DEBUG] Error creating data directory: {str(e)}')
             raise
-
-        # Set database file path
         self.db_file = os.path.join(self.data_dir, 'data.db')
         print(f'[DEBUG] Database file path: {self.db_file}')
-        
-        # Verify database access and initialize
         if not self.verify_database_access():
             raise Exception('Database access verification failed')
-            
-        # Initialize database with retries
+
         max_retries = 3
         retry_delay = 1  # seconds
-        
         for attempt in range(max_retries):
             try:
                 self.init_database()
@@ -105,8 +86,7 @@ class DataManager:
                 print(f'[DEBUG] Database initialization attempt {attempt + 1} failed, retrying in {retry_delay} seconds...')
                 time.sleep(retry_delay)
                 retry_delay *= 2
-        
-        # Load data with retries
+
         for attempt in range(max_retries):
             try:
                 self.load_data()
@@ -122,10 +102,10 @@ class DataManager:
                 print(f'[DEBUG] Data load attempt {attempt + 1} failed, retrying in {retry_delay} seconds...')
                 time.sleep(retry_delay)
                 retry_delay *= 2
-        
-        # Start auto-save loop
+
+    async def start_auto_save(self):
         asyncio.create_task(self._auto_save_loop())
-    
+
     async def _auto_save_loop(self):
         while True:
             try:
@@ -138,285 +118,6 @@ class DataManager:
                 print(f'[ERROR] Auto-save failed: {str(e)}')
                 traceback.print_exc()
 
-    def init_database(self):
-        try:
-            print(f'[DEBUG] Initializing database at {self.db_file}')
-            # Ensure the data directory exists
-            os.makedirs(os.path.dirname(self.db_file), exist_ok=True)
-            
-            with sqlite3.connect(self.db_file) as conn:
-                cursor = conn.cursor()
-                # Create tables if they don't exist
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS badges (
-                        user_id TEXT,
-                        badge TEXT,
-                        PRIMARY KEY (user_id, badge)
-                    )
-                ''')
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS no_prefix_users (
-                        user_id TEXT PRIMARY KEY
-                    )
-                ''')
-                conn.commit()
-                print('[DEBUG] Database initialized successfully')
-                
-                # Verify tables exist
-                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND (name='badges' OR name='no_prefix_users')")
-                tables = cursor.fetchall()
-                if len(tables) != 2:
-                    raise Exception(f'Database initialization failed - missing tables. Found: {tables}')
-                    
-        except sqlite3.Error as e:
-            print(f'[DEBUG] SQLite error during database initialization: {str(e)}')
-            traceback.print_exc()
-            raise
-        except Exception as e:
-            print(f'[DEBUG] Error during database initialization: {str(e)}')
-            traceback.print_exc()
-            raise
-
-    def verify_data_consistency(self) -> bool:
-        with sqlite3.connect(self.db_file) as conn:
-            cursor = conn.cursor()
-            # Get badges from database
-            cursor.execute('SELECT user_id, badge FROM badges')
-            db_badges = {}
-            for user_id, badge in cursor.fetchall():
-                if user_id not in db_badges:
-                    db_badges[user_id] = set()
-                db_badges[user_id].add(badge)
-
-            # Get no_prefix users from database
-            cursor.execute('SELECT user_id FROM no_prefix_users')
-            db_no_prefix = set(row[0] for row in cursor.fetchall())
-
-            return db_badges == self.badges and db_no_prefix == self.no_prefix_users
-
-    def load_data(self):
-        try:
-            print('[DEBUG] Loading data from SQLite database')
-            with sqlite3.connect(self.db_file) as conn:
-                cursor = conn.cursor()
-                
-                # Enable foreign keys for data integrity
-                cursor.execute('PRAGMA foreign_keys = ON')
-                
-                # Load badges with explicit type conversion
-                cursor.execute('SELECT user_id, badge FROM badges')
-                self.badges.clear()  # Clear existing data
-                for user_id, badge in cursor.fetchall():
-                    user_id = str(user_id)  # Ensure user_id is string
-                    if user_id not in self.badges:
-                        self.badges[user_id] = set()
-                    if badge in BADGES:  # Validate badge exists
-                        self.badges[user_id].add(badge)
-                    else:
-                        print(f'[WARNING] Invalid badge {badge} found for user {user_id}')
-                
-                # Load no-prefix users with explicit type conversion
-                cursor.execute('SELECT user_id FROM no_prefix_users')
-                self.no_prefix_users = set(str(row[0]) for row in cursor.fetchall())  # Ensure all IDs are strings
-                
-                print(f'[DEBUG] Loaded badges: {self.badges}')
-                print(f'[DEBUG] Loaded no_prefix_users: {self.no_prefix_users}')
-                
-                # Verify loaded data
-                if not self.verify_data_consistency():
-                    print('[WARNING] Data consistency check failed after load')
-                    raise Exception('Data consistency check failed')
-                
-        except sqlite3.Error as e:
-            print(f'[DEBUG] SQLite error loading data: {str(e)}')
-            traceback.print_exc()
-            # Initialize empty data structures on error
-            self.badges = {}
-            self.no_prefix_users = set()
-            # Ensure database is properly initialized
-            self.init_database()
-        except Exception as e:
-            print(f'[DEBUG] Error loading data: {str(e)}')
-            traceback.print_exc()
-            # Initialize empty data structures on error
-            self.badges = {}
-            self.no_prefix_users = set()
-            # Ensure database is properly initialized
-            self.init_database()
-
-    def save_data(self):
-        backup_file = None
-        try:
-            print('[DEBUG] Saving data to SQLite database')
-            print(f'[DEBUG] Current badges: {self.badges}')
-            print(f'[DEBUG] Current no_prefix_users: {self.no_prefix_users}')
-
-            # Ensure data directory exists and is writable
-            if not os.path.exists(self.data_dir):
-                os.makedirs(self.data_dir, mode=0o777, exist_ok=True)
-
-            # Create backup of current database if it exists
-            if os.path.exists(self.db_file):
-                backup_file = f"{self.db_file}.backup"
-                import shutil
-                shutil.copy2(self.db_file, backup_file)
-                print(f'[DEBUG] Created backup at {backup_file}')
-
-            # Use a temporary file for atomic write
-            temp_db = f"{self.db_file}.tmp"
-            with sqlite3.connect(temp_db) as conn:
-                cursor = conn.cursor()
-                try:
-                    # Enable WAL mode and foreign keys
-                    cursor.execute('PRAGMA journal_mode = WAL')
-                    cursor.execute('PRAGMA foreign_keys = ON')
-                    cursor.execute('PRAGMA synchronous = FULL')
-                    
-                    # Create tables
-                    cursor.execute('''
-                        CREATE TABLE IF NOT EXISTS badges (
-                            user_id TEXT,
-                            badge TEXT,
-                            PRIMARY KEY (user_id, badge)
-                        )
-                    ''')
-                    cursor.execute('''
-                        CREATE TABLE IF NOT EXISTS no_prefix_users (
-                            user_id TEXT PRIMARY KEY
-                        )
-                    ''')
-                    
-                    # Begin immediate transaction for write lock
-                    cursor.execute('BEGIN IMMEDIATE TRANSACTION')
-                    
-                    # Insert badges
-                    for user_id, badges in self.badges.items():
-                        for badge in badges:
-                            cursor.execute('INSERT OR REPLACE INTO badges (user_id, badge) VALUES (?, ?)', 
-                                         (str(user_id), badge))
-
-                    # Insert no_prefix users
-                    cursor.execute('DELETE FROM no_prefix_users')
-                    for user_id in self.no_prefix_users:
-                        cursor.execute('INSERT INTO no_prefix_users (user_id) VALUES (?)', 
-                                     (str(user_id),))
-
-                    # Verify changes
-                    changes = cursor.execute('SELECT changes()').fetchone()[0]
-                    print(f'[DEBUG] Changes to be committed: {changes}')
-
-                    # Commit transaction
-                    conn.commit()
-                    print('[DEBUG] Transaction committed successfully')
-
-                except Exception as e:
-                    conn.rollback()
-                    print(f'[DEBUG] Error during save transaction: {str(e)}')
-                    raise
-
-            # Atomic rename for data consistency
-            import os
-            if os.name == 'nt':  # Windows
-                if os.path.exists(self.db_file):
-                    os.replace(temp_db, self.db_file)
-                else:
-                    os.rename(temp_db, self.db_file)
-            else:  # Unix-like
-                os.rename(temp_db, self.db_file)
-
-            print('[DEBUG] Data saved successfully')
-
-            # Verify data consistency
-            if not self.verify_data_consistency():
-                raise Exception('Data consistency check failed after save')
-
-            # Remove backup if save was successful
-            if backup_file and os.path.exists(backup_file):
-                os.remove(backup_file)
-                print('[DEBUG] Removed backup file after successful save')
-
-        except Exception as e:
-            print(f'[DEBUG] Error saving data: {str(e)}')
-            traceback.print_exc()
-            
-            # Restore from backup if available
-            if backup_file and os.path.exists(backup_file):
-                try:
-                    if os.path.exists(self.db_file):
-                        os.remove(self.db_file)
-                    shutil.copy2(backup_file, self.db_file)
-                    print('[DEBUG] Restored from backup after failed save')
-                except Exception as restore_error:
-                    print(f'[DEBUG] Error restoring from backup: {str(restore_error)}')
-            raise
-        finally:
-            # Cleanup temporary files
-            try:
-                if os.path.exists(f"{self.db_file}.tmp"):
-                    os.remove(f"{self.db_file}.tmp")
-                if os.path.exists(f"{self.db_file}-journal"):
-                    os.remove(f"{self.db_file}-journal")
-            except Exception as cleanup_error:
-                print(f'[DEBUG] Error cleaning up temporary files: {str(cleanup_error)}')
-
-data_manager = DataManager()
-
-# Custom prefix handler
-def get_prefix(bot, message):
-    if str(message.author.id) in data_manager.no_prefix_users:
-        return commands.when_mentioned_or('')(bot, message)
-    return commands.when_mentioned_or(DEFAULT_PREFIX)(bot, message)
-
-bot = commands.Bot(command_prefix=get_prefix, intents=discord.Intents.all(), help_command=None)
-
-# Help command with dropdown
-
-class HelpDropdown(Select):
-    def __init__(self):
-        options = [
-                SelectOption(
-                    label='General',
-                    description='Basic utility commands',
-                    emoji=PartialEmoji(name='general1', id=1389183049916481646)
-                ),
-                SelectOption(
-                    label='Profile',
-                    description='User profile and badge management',
-                    emoji=PartialEmoji(name='profile1', id=1389182687947919370)
-                ),
-                SelectOption(
-                    label='Moderation',
-                    description='Server management commands',
-                    emoji=PartialEmoji(name='moderation', id=1345359844445524041)
-                ),
-                SelectOption(
-                    label='Utility',
-                    description='Additional utility features',
-                    emoji=PartialEmoji(name='setting1', id=1389590399760334868)
-                ),
-                SelectOption(
-                    label='Antinuke',
-                    description='Server protection features',
-                    emoji=PartialEmoji(name='antinuke1', id=1389284381247410287)
-                ),
-                SelectOption(
-                    label='Tickets',
-                    description='Ticket system management',
-                    emoji=PartialEmoji(name='ticket1', id=1389284016099950693)
-                ),
-                SelectOption(
-                    label='Admin',
-                    description='Administrative commands',
-                    emoji=PartialEmoji(name='GoldModerator', id=1348939969456115764)
-                )
-            ]
-        super().__init__(
-            placeholder='✨ Select a category',
-            min_values=1,
-            max_values=1,
-            options=options,
-            custom_id='help_dropdown'
-        )
 
     async def callback(self, interaction: Interaction):
         try:
