@@ -1005,49 +1005,6 @@ class TicketView(View):
         await interaction.response.send_message(f'Your ticket has been created: {channel.mention}', ephemeral=True)
 
 
-# Update help menu with new categories
-# Help menu implementation moved to the top of the file
-
-
-
-
-# New General Commands
-@bot.command(name='avatar')
-async def avatar(ctx, member: Optional[discord.Member] = None):
-    member = member or ctx.author
-    embed = discord.Embed(
-        title=f'{member.name}\'s Avatar',
-        color=member.color
-    )
-    embed.set_image(url=member.avatar.url if member.avatar else member.default_avatar.url)
-    await ctx.send(embed=embed)
-
-@bot.command(name='servericon')
-async def servericon(ctx):
-    if not ctx.guild.icon:
-        return await ctx.send('<a:nope1:1389178762020520109> This server has no icon!')
-    embed = discord.Embed(
-        title=f'{ctx.guild.name}\'s Icon',
-        color=discord.Color.blue()
-    )
-    embed.set_image(url=ctx.guild.icon.url)
-    await ctx.send(embed=embed)
-
-@bot.command(name='members')
-async def members(ctx):
-    total = len(ctx.guild.members)
-    humans = len([m for m in ctx.guild.members if not m.bot])
-    bots = len([m for m in ctx.guild.members if m.bot])
-    embed = discord.Embed(
-        title=f'{ctx.guild.name} Member Stats',
-        description=f'<:members1:1389604287469977691> Total Members: {total}\nHumans: {humans}\nBots: {bots}',
-        color=discord.Color.blue()
-    )
-    await ctx.send(embed=embed)
-
-# New Moderation Commands
-
-
 
 @bot.command(name='mute')
 @commands.has_permissions(moderate_members=True)
