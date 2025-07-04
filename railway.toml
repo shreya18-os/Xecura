@@ -1,0 +1,22 @@
+[[mounts]]
+source = "/data"
+destination = "/app/data"
+type = "volume"
+
+[build]
+builder = "dockerfile"
+
+[deploy]
+startCommand = "python main.py"
+healthcheckPath = "/"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+[[services]]
+internal_port = 8080
+protocol = "tcp"
+
+[variables]
+DATA_DIR = "/app/data"
+PYTHONUNBUFFERED = "1"
