@@ -881,49 +881,7 @@ async def deletechannel(ctx, channel: discord.TextChannel):
     )
     await ctx.send(embed=embed)
 
-@bot.command(name='invites')
-@commands.has_permissions(manage_guild=True)
-async def invites(ctx):
-    invites = await ctx.guild.invites()
-    if not invites:
-        return await ctx.send('<a:nope1:1389178762020520109> No invites found!')
-    embed = discord.Embed(
-        title=f'Invites for {ctx.guild.name}',
-        color=discord.Color.blue()
-    )
-    for invite in invites:
-        embed.add_field(
-            name=f'<:rinvites:1345380642342572193> Invite by {invite.inviter}',
-            value=f'Code: {invite.code}\nUses: {invite.uses}\nExpires: {invite.expires_at or "Never"}',
-            inline=False
-        )
-    await ctx.send(embed=embed)
 
-@bot.command(name='lock')
-@commands.has_permissions(manage_channels=True)
-async def lock(ctx, channel: Optional[discord.TextChannel] = None):
-    channel = channel or ctx.channel
-    await channel.set_permissions(ctx.guild.default_role, send_messages=False)
-    embed = discord.Embed(
-        title='<:tick1:1389181551358509077> Channel Locked',
-        description=f'{channel.mention} has been locked',
-        color=discord.Color.red()
-    )
-    await ctx.send(embed=embed)
-
-@bot.command(name='unlock')
-@commands.has_permissions(manage_channels=True)
-async def unlock(ctx, channel: Optional[discord.TextChannel] = None):
-    channel = channel or ctx.channel
-    await channel.set_permissions(ctx.guild.default_role, send_messages=True)
-    embed = discord.Embed(
-        title='<:tick1:1389181551358509077> Channel Unlocked',
-        description=f'{channel.mention} has been unlocked',
-        color=discord.Color.green()
-    )
-    await ctx.send(embed=embed)
-
-// ...
 
 @bot.event
 async def on_message(message):
