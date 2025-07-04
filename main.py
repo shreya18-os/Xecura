@@ -917,53 +917,7 @@ async def on_message(message):
     except discord.Forbidden:
         pass
 
-@bot.command(name='help', aliases=['h'])
-async def custom_help(ctx):
-    embed = discord.Embed(
-        title='<:help:1345381592335646750> Xecura Help Menu',
-        description=f'Hello {ctx.author.mention}! Welcome to Xecura Bot!\n\n**About Xecura**\nXecura is a versatile Discord bot that provides moderation, profile management, antinuke protection, and ticket system features.\n\n**Using the Bot**\n• All commands start with `{DEFAULT_PREFIX}` (some users have no-prefix privilege)\n• Use the dropdown menu below to explore different command categories\n• For detailed command usage, include the command in the help menu',
-        color=ctx.author.color or discord.Color.blue()
-    )
-    if ctx.guild.icon:
-        embed.set_thumbnail(url=ctx.guild.icon.url)
-    view = HelpView()
-    view.message = await ctx.send(embed=embed, view=view)
 
-@bot.command(name='profile')
-async def profile(ctx, member: Optional[discord.Member] = None):
-    member = member or ctx.author
-    
-    embed = discord.Embed(
-        title=f'Profile - {member}',
-        color=member.color
-    )
-    
-    # Add user info
-    embed.set_thumbnail(url=member.avatar.url if member.avatar else None)
-    embed.add_field(name='<:idi1:1389183049916481646> User ID', value=member.id, inline=True)
-    embed.add_field(name='📅 Joined', value=member.joined_at.strftime('%Y-%m-%d'), inline=True)
-    
-    # Add badges
-    badges = data_manager.badges.get(str(member.id), set())
-    badge_display = '\n'.join([BADGES[badge] for badge in badges]) if badges else BADGES['no_badge']
-    badge_display = badge_display.replace('👑', '<:owner1:1389180694814654474>')\
-                               .replace('🛡️', '<a:staff112:1389180853195771906>')\
-                               .replace('⭐', '<:vip1:1389618245803446302>')\
-                               .replace('🔨', '<:Management:1348937775554105355>')\
-                               .replace('🐛', '<:bughn1:1389618460606206002>')\
-                               .replace('⚡', '<:admin1:1389181036755161221>')\
-                               .replace('❌', '<a:nope1:1389178762020520109>')
-    embed.add_field(
-        name='<a:badge1:1389182687947919370> Badges',
-        value=badge_display,
-        inline=False
-    )
-    
-    # Add no-prefix status
-    no_prefix_status = '<:tick1:1389181551358509077> Enabled' if str(member.id) in data_manager.no_prefix_users else '<a:nope1:1389178762020520109> Disabled'
-    embed.add_field(name='<:prefix1:1389181942553116695> No-Prefix Status', value=no_prefix_status, inline=False)
-    
-    await ctx.send(embed=embed)
 
 @bot.command(name='givebadge')
 async def givebadge(ctx, user: discord.Member, badge: str):
