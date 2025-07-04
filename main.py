@@ -19,6 +19,12 @@ OWNER_ID = 1101467683083530331
 # Load bot token from environment variable (Railway secrets)
 TOKEN = os.getenv('BOT_TOKEN')
 
+# Create bot instance with intents
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+bot = commands.Bot(command_prefix=DEFAULT_PREFIX, intents=intents, help_command=None)
+
 # Define available badges
 BADGES = {
     'owner': '<:owner1:1389180694814654474>',
