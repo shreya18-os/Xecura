@@ -1019,15 +1019,6 @@ class TicketView(View):
         await channel.send(embed=embed, view=CloseButton())
         await interaction.response.send_message(f'Your ticket has been created: {channel.mention}', ephemeral=True)
 
-@bot.command(name='setup-tickets')
-@commands.has_permissions(administrator=True)
-async def setup_tickets(ctx):
-    embed = discord.Embed(
-        title='<:ticket1:1389284016099950693> Create a Ticket',
-        description='Click the button below to create a support ticket.',
-        color=discord.Color.blue()
-    )
-    await ctx.send(embed=embed, view=TicketView())
 
 # Update help menu with new categories
 # Help menu implementation moved to the top of the file
