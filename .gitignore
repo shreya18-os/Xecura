@@ -1,4 +1,9 @@
 # Data files
+# Keeping important bot data
+!data/badges.json
+!data/non_prefix.json
+
+# Exclude other data files
 data/*.db
 data/*.json
 
